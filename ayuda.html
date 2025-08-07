@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Guía de talles y políticas de cambios y devoluciones de Romix, tu tienda de ropa para invierno 2025.">
+    <meta name="keywords" content="Romix, guía de talles, cambios, devoluciones, ropa invierno">
     <title>Romix - Ayuda</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
@@ -219,6 +221,71 @@
             color: var(--primary);
         }
         
+        #cart {
+            display: none;
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 400px;
+            height: 100%;
+            background-color: white;
+            box-shadow: -2px 0 10px rgba(0,0,0,0.1);
+            padding: 20px;
+            overflow-y: auto;
+            z-index: 1000;
+            transition: transform 0.3s;
+        }
+        
+        #cart.hidden {
+            display: none;
+        }
+        
+        #cart table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        #cart table th, #cart table td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        #cart table th {
+            background-color: var(--light);
+            color: var(--dark);
+        }
+        
+        #cart .cart-total {
+            margin-top: 20px;
+            font-weight: bold;
+            text-align: right;
+        }
+        
+        #cart .cart-actions {
+            margin-top: 20px;
+            text-align: right;
+        }
+        
+        #cart .cart-actions button {
+            padding: 8px 15px;
+            margin-left: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        #cart .btn-danger {
+            background-color: var(--danger);
+            color: white;
+        }
+        
+        #cart .btn-success {
+            background-color: var(--success);
+            color: white;
+        }
+        
         footer {
             background-color: var(--dark);
             color: white;
@@ -306,6 +373,10 @@
                 padding-bottom: 10px;
             }
             
+            #cart {
+                width: 100%;
+            }
+            
             .size-guide-table {
                 font-size: 0.8rem;
             }
@@ -327,7 +398,7 @@
                 <a href="https://wa.me/5491154272065" class="whatsapp-header">
                     <i class="fab fa-whatsapp"></i> +54 9 11 5427-2065
                 </a>
-                <div class="cart-icon" onclick="window.location.href='index.html#cart'">
+                <div class="cart-icon" onclick="toggleCart()">
                     <i class="fas fa-shopping-cart"></i>
                     <span id="cart-count">0</span>
                 </div>
@@ -482,25 +553,46 @@
         </section>
         
         <section id="returns" class="help-section">
-            <h2 class="section-title"><i class="fas fa-exchange-alt"></i> Cambios</h2>
+            <h2 class="section-title"><i class="fas fa-exchange-alt"></i> Cambios y Devoluciones</h2>
             <p>En Romix, queremos que estés completamente satisfecho con tu compra. Si necesitas realizar un cambio o devolución, sigue estas indicaciones:</p>
             
             <h3>Condiciones para Cambios</h3>
             <ul class="returns-info">
                 <li><i class="fas fa-check-circle"></i> Los cambios deben realizarse dentro de los 30 días posteriores a la compra.</li>
-                <li><i class="fas fa-check-circle"></i> La prenda debe estar sin usar y con etiquetas originales .</li>
-                <li><i class="fas fa-check-circle"></i> Puedes cambiar por otro talle, color; en caso de ser un cambio de talles comunes a especiales se podra hacer el cambio, pero pagando la diferencia.</li>
-                <li><i class="fas fa-check-circle"></i> Los cambios en tienda física no tienen costo.</li>
+                <li><i class="fas fa-check-circle"></i> La prenda debe estar sin usar, con etiquetas originales y en su empaque original.</li>
+                <li><i class="fas fa-check-circle"></i> Puedes cambiar por otro talle, color o producto de igual o mayor valor (pagando la diferencia).</li>
+                <li><i class="fas fa-check-circle"></i> Los cambios en tienda física no tienen costo. Para envíos, el costo de transporte corre por cuenta del cliente.</li>
             </ul>
             
-            <h3>Proceso de Cambio </h3>
-            <p>Para iniciar un cambio :</p>
+            <h3>Condiciones para Devoluciones</h3>
+            <ul class="returns-info">
+                <li><i class="fas fa-check-circle"></i> Las devoluciones se aceptan dentro de los 15 días posteriores a la compra.</li>
+                <li><i class="fas fa-check-circle"></i> La prenda debe estar sin usar, con etiquetas y en su empaque original.</li>
+                <li><i class="fas fa-check-circle"></i> Se reembolsará el valor del producto mediante el mismo medio de pago utilizado (efectivo, transferencia o Mercado Pago).</li>
+                <li><i class="fas fa-check-circle"></i> Los costos de envío no son reembolsables, y el envío de devolución corre por cuenta del cliente.</li>
+            </ul>
+            
+            <h3>Proceso de Cambio o Devolución</h3>
+            <p>Para iniciar un cambio o devolución:</p>
             <ul class="returns-info">
                 <li><i class="fas fa-phone"></i> Contáctanos por WhatsApp al +54 9 11 5427-2065 o por email a info@romix.com.ar.</li>
                 <li><i class="fas fa-store"></i> Visita nuestra tienda en Concordia 514 local b, CABA, durante el horario de atención.</li>
+                <li><i class="fas fa-shipping-fast"></i> Si realizaste la compra online, envía el producto a nuestra dirección con la factura o comprobante de compra.</li>
             </ul>
             
+            <h3>Preguntas Frecuentes</h3>
+            <p>Si tienes dudas adicionales, consulta nuestras <a href="#faqs">Preguntas Frecuentes</a> o contáctanos directamente.</p>
         </section>
+    </div>
+    
+    <div id="cart" class="hidden">
+        <h2 style="color: var(--secondary); margin-bottom: 20px;">Tu Carrito</h2>
+        <table id="cart-items"></table>
+        <div class="cart-total">Total: $<span id="cart-total">0.00</span></div>
+        <div class="cart-actions">
+            <button class="btn btn-danger" onclick="clearCart()">Vaciar Carrito</button>
+            <button class="btn btn-success" onclick="sendToWhatsApp()">Enviar Pedido</button>
+        </div>
     </div>
     
     <footer>
@@ -518,8 +610,11 @@
             <div class="footer-column">
                 <h4>Ayuda</h4>
                 <ul>
+                    <li><a href="#faqs">Preguntas frecuentes</a></li>
                     <li><a href="#size-guide">Guía de talles</a></li>
-                    <li><a href="#returns">Cambios </a></li>
+                    <li><a href="#returns">Cambios y devoluciones</a></li>
+                    <li><a href="#">Términos y condiciones</a></li>
+                    <li><a href="#">Política de privacidad</a></li>
                 </ul>
             </div>
             <div class="footer-column">
@@ -531,10 +626,103 @@
                     <li><a href="mailto:info@romix.com.ar">Enviar email</a></li>
                 </ul>
             </div>
+            <div class="footer-column">
+                <h4>Newsletter</h4>
+                <p>Suscribite para recibir novedades y promociones</p>
+                <input type="email" placeholder="Tu email" style="width: 100%; padding: 8px; margin-bottom: 10px; border-radius: 5px; border: 1px solid #ddd;">
+                <button style="background-color: var(--primary); color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer;">Suscribirme</button>
+            </div>
         </div>
         <div class="copyright">
             <p>&copy; 2025 Romix - Todos los derechos reservados</p>
         </div>
     </footer>
+    
+    <script>
+        let cart = JSON.parse(localStorage.getItem('cart')) || [];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            updateCart();
+        });
+
+        function updateCart() {
+            const cartItems = document.getElementById('cart-items');
+            const cartTotal = document.getElementById('cart-total');
+            const cartCount = document.getElementById('cart-count');
+            let total = 0;
+
+            cartItems.innerHTML = '';
+            cart.forEach(item => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${item.name}</td>
+                    <td>${item.type}</td>
+                    <td>${item.color}</td>
+                    <td>${item.size}</td>
+                    <td>${item.quantity}</td>
+                    <td>$${item.price.toFixed(2)}</td>
+                    <td>$${item.subtotal.toFixed(2)}</td>
+                    <td>
+                        <button class="btn btn-danger" onclick="removeFromCart(${item.id})"><i class="fas fa-trash"></i></button>
+                    </td>
+                `;
+                cartItems.appendChild(row);
+                total += item.subtotal;
+            });
+
+            cartTotal.textContent = total.toFixed(2);
+            cartCount.textContent = cart.reduce((count, item) => count + item.quantity, 0);
+            const cartSection = document.getElementById('cart');
+            if (cart.length === 0) {
+                cartSection.classList.add('hidden');
+            } else {
+                cartSection.classList.remove('hidden');
+            }
+        }
+
+        function toggleCart() {
+            const cartSection = document.getElementById('cart');
+            cartSection.classList.toggle('hidden');
+            if (!cartSection.classList.contains('hidden')) {
+                cartSection.classList.add('animate__animated', 'animate__fadeIn');
+                setTimeout(() => {
+                    cartSection.classList.remove('animate__animated', 'animate__fadeIn');
+                }, 1000);
+            }
+        }
+
+        function removeFromCart(id) {
+            cart = cart.filter(item => item.id !== id);
+            localStorage.setItem('cart', JSON.stringify(cart));
+            updateCart();
+        }
+
+        function clearCart() {
+            cart = [];
+            localStorage.setItem('cart', JSON.stringify(cart));
+            updateCart();
+        }
+
+        function sendToWhatsApp() {
+            if (cart.length === 0) {
+                alert('El carrito está vacío. Agrega productos antes de enviar el pedido.');
+                return;
+            }
+
+            let message = '¡Hola! Quiero realizar el siguiente pedido:\n\n';
+            cart.forEach(item => {
+                message += `${item.name} (${item.type})\n`;
+                message += `Color: ${item.color}\n`;
+                message += `Talle: ${item.size}\n`;
+                message += `Cantidad: ${item.quantity}\n`;
+                message += `Subtotal: $${item.subtotal.toFixed(2)}\n\n`;
+            });
+            message += `Total: $${cart.reduce((total, item) => total + item.subtotal, 0).toFixed(2)}`;
+
+            const encodedMessage = encodeURIComponent(message);
+            const phoneNumber = '+5491154272065';
+            window.open(`https://wa.me/${phoneNumber}?text=${encodedMessage}`, '_blank');
+        }
+    </script>
 </body>
 </html>
