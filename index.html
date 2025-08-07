@@ -649,6 +649,7 @@
                 <li><a href="#hombre"><i class="fas fa-male"></i> Hombre</a></li>
                 <li><a href="#ninos"><i class="fas fa-child"></i> Niños</a></li>
                 <li><a href="#contacto"><i class="fas fa-map-marker-alt"></i> Contacto</a></li>
+                <li><a href="#" onclick="redirectToHelp(); return false;"><i class="fas fa-question-circle"></i> Ayuda</a></li>
             </ul>
         </div>
     </nav>
@@ -1434,357 +1435,269 @@
         </div>
     </footer>
     
-    <script>
-        let cart = [];
-        let favorites = [];
-        let currentProduct = null;
-        let currentType = null;
+   <script>
+    let cart = JSON.parse(localStorage.getItem('cart')) || [];
+    let favorites = [];
+    let currentProduct = null;
+    let currentType = null;
 
-        function selectColor(element) {
-            const card = element.closest('.product-card');
-            card.querySelectorAll('.color-option').forEach(opt => opt.classList.remove('selected'));
-            element.classList.add('selected');
+    document.addEventListener('DOMContentLoaded', () => {
+        initializeQuantityControls();
+        updateCart();
+    });
+
+    function redirectToHelp() {
+        window.location.href = 'ayuda.html';
+    }
+
+    function selectColor(element) {
+        const card = element.closest('.product-card');
+        card.querySelectorAll('.color-option').forEach(opt => opt.classList.remove('selected'));
+        element.classList.add('selected');
+    }
+
+    function selectSize(element) {
+        const card = element.closest('.product-card');
+        card.querySelectorAll('.size-option').forEach(opt => opt.classList.remove('selected'));
+        element.classList.add('selected');
+    }
+
+    function validateSelection(card) {
+        const selectedColor = card.querySelector('.color-option.selected');
+        const selectedSize = card.querySelector('.size-option.selected');
+        if (!selectedColor || !selectedSize) {
+            alert('Por favor, selecciona un color y un talle antes de agregar al carrito.');
+            return false;
         }
+        return true;
+    }
 
-        function selectSize(element) {
-            const card = element.closest('.product-card');
-            card.querySelectorAll('.size-option').forEach(opt => opt.classList.remove('selected'));
-            element.classList.add('selected');
-        }
+    function openModal(productName, productType, button) {
+        const card = button.closest('.product-card');
+        if (!validateSelection(card)) return;
 
-        function validateSelection(card) {
-            const selectedColor = card.querySelector('.color-option.selected');
-            const selectedSize = card.querySelector('.size-option.selected');
-            if (!selectedColor || !selectedSize) {
-                alert('Por favor, selecciona un color y un talle antes de agregar al carrito.');
-                return false;
-            }
-            return true;
-        }
+        currentProduct = productName;
+        currentType = productType;
+        const colors = card.querySelectorAll('.color-option');
+        const sizes = card.querySelectorAll('.size-option');
+        const modal = document.getElementById('buy-modal');
+        const modalTitle = document.getElementById('modal-title');
+        const modalColor = document.getElementById('modal-color');
+        const modalSize = document.getElementById('modal-size');
+        const modalQuantity = document.getElementById('modal-quantity');
 
-        function openModal(productName, productType, button) {
-            const card = button.closest('.product-card');
-            if (!validateSelection(card)) return;
+        modalTitle.textContent = `Confirmar Compra: ${productName}`;
+        modalColor.innerHTML = '';
+        modalSize.innerHTML = '';
 
-            currentProduct = productName;
-            currentType = productType;
-            const colors = card.querySelectorAll('.color-option');
-            const sizes = card.querySelectorAll('.size-option');
-            const modal = document.getElementById('buy-modal');
-            const modalTitle = document.getElementById('modal-title');
-            const modalColor = document.getElementById('modal-color');
-            const modalSize = document.getElementById('modal-size');
+        colors.forEach(color => {
+            const option = document.createElement('option');
+            option.value = color.dataset.color;
+            option.textContent = color.dataset.color;
+            modalColor.appendChild(option);
+        });
 
-            modalTitle.textContent = `Confirmar Compra: ${productName}`;
-            modalColor.innerHTML = '';
-            modalSize.innerHTML = '';
-
-            colors.forEach(color => {
+        sizes.forEach(size => {
+            if (!size.classList.contains('unavailable')) {
                 const option = document.createElement('option');
-                option.value = color.dataset.color;
-                option.textContent = color.dataset.color;
-                modalColor.appendChild(option);
-            });
-
-            sizes.forEach(size => {
-                if (!size.classList.contains('unavailable')) {
-                    const option = document.createElement('option');
-                    option.value = size.dataset.size;
-                    option.textContent = size.dataset.size;
-                    modalSize.appendChild(option);
-                }
-            });
-
-            const selectedColor = card.querySelector('.color-option.selected');
-            const selectedSize = card.querySelector('.size-option.selected');
-            if (selectedColor) modalColor.value = selectedColor.dataset.color;
-            if (selectedSize) modalSize.value = selectedSize.dataset.size;
-
-            modal.style.display = 'flex';
-            modal.classList.add('animate__animated', 'animate__fadeIn');
-        }
-
-        function closeModal() {
-            const modal = document.getElementById('buy-modal');
-            modal.classList.remove('animate__animated', 'animate__fadeIn');
-            modal.style.display = 'none';
-            currentProduct = null;
-            currentType = null;
-        }
-
-        function addToCartFromModal() {
-            const color = document.getElementById('modal-color').value;
-            const size = document.getElementById('modal-size').value;
-            const quantity = parseInt(document.getElementById('modal-quantity').value);
-            const card = Array.from(document.querySelectorAll('.product-card')).find(
-                card => card.querySelector('.product-title').textContent === currentProduct
-            );
-            const priceText = card.querySelector('.product-price').childNodes[0].nodeValue.trim().replace('$', '').replace(',', '');
-            const price = parseFloat(priceText);
-
-            if (!color || !size || !quantity || quantity < 1) {
-                alert('Por favor, selecciona color, talle y una cantidad válida.');
-                return;
+                option.value = size.dataset.size;
+                option.textContent = size.dataset.size;
+                modalSize.appendChild(option);
             }
+        });
 
-            const item = {
-                id: Date.now(),
-                name: currentProduct,
-                type: currentType,
-                color: color,
-                size: size,
-                quantity: quantity,
-                price: price,
-                subtotal: price * quantity
-            };
+        const selectedColor = card.querySelector('.color-option.selected');
+        const selectedSize = card.querySelector('.size-option.selected');
+        const quantityInput = card.querySelector('.quantity-input');
+        if (selectedColor) modalColor.value = selectedColor.dataset.color;
+        if (selectedSize) modalSize.value = selectedSize.dataset.size;
+        modalQuantity.value = quantityInput ? quantityInput.value : '1';
 
-            cart.push(item);
-            updateCart();
-            closeModal();
-            showConfirmation();
+        modal.style.display = 'flex';
+        modal.classList.add('animate__animated', 'animate__fadeIn');
+    }
+
+    function closeModal() {
+        const modal = document.getElementById('buy-modal');
+        modal.classList.remove('animate__animated', 'animate__fadeIn');
+        modal.style.display = 'none';
+        currentProduct = null;
+        currentType = null;
+    }
+
+    function addToCartFromModal() {
+        const color = document.getElementById('modal-color').value;
+        const size = document.getElementById('modal-size').value;
+        const quantity = parseInt(document.getElementById('modal-quantity').value);
+        const card = Array.from(document.querySelectorAll('.product-card')).find(
+            card => card.querySelector('.product-title').textContent === currentProduct
+        );
+        const priceText = card.querySelector('.product-price').childNodes[0].nodeValue.trim().replace('$', '').replace(',', '');
+        const price = parseFloat(priceText);
+
+        if (!color || !size || !quantity || quantity < 1) {
+            alert('Por favor, selecciona color, talle y una cantidad válida.');
+            return;
         }
 
-        function removeFromCart(id) {
-            cart = cart.filter(item => item.id !== id);
-            updateCart();
+        const item = {
+            id: Date.now(),
+            name: currentProduct,
+            type: currentType,
+            color: color,
+            size: size,
+            quantity: quantity,
+            price: price,
+            subtotal: price * quantity
+        };
+
+        cart.push(item);
+        localStorage.setItem('cart', JSON.stringify(cart));
+        updateCart();
+        closeModal();
+        showConfirmation();
+    }
+
+    function removeFromCart(id) {
+        cart = cart.filter(item => item.id !== id);
+        localStorage.setItem('cart', JSON.stringify(cart));
+        updateCart();
+    }
+
+    function clearCart() {
+        cart = [];
+        localStorage.setItem('cart', JSON.stringify(cart));
+        updateCart();
+    }
+
+    function updateCart() {
+        const cartItems = document.getElementById('cart-items');
+        const cartTotal = document.getElementById('cart-total');
+        const cartCount = document.getElementById('cart-count');
+        let total = 0;
+
+        cartItems.innerHTML = '';
+        cart.forEach(item => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${item.name}</td>
+                <td>${item.type}</td>
+                <td>${item.color}</td>
+                <td>${item.size}</td>
+                <td>${item.quantity}</td>
+                <td>$${item.price.toFixed(2)}</td>
+                <td>$${item.subtotal.toFixed(2)}</td>
+                <td>
+                    <button class="btn btn-danger" onclick="removeFromCart(${item.id})"><i class="fas fa-trash"></i></button>
+                </td>
+            `;
+            cartItems.appendChild(row);
+            total += item.subtotal;
+        });
+
+        cartTotal.textContent = total.toFixed(2);
+        cartCount.textContent = cart.reduce((count, item) => count + item.quantity, 0);
+        const cartSection = document.getElementById('cart');
+        if (cart.length === 0) {
+            cartSection.classList.add('hidden');
+        } else {
+            cartSection.classList.remove('hidden');
+        }
+    }
+
+    function toggleCart() {
+        const cartSection = document.getElementById('cart');
+        cartSection.classList.toggle('hidden');
+        if (!cartSection.classList.contains('hidden')) {
+            cartSection.classList.add('animate__animated', 'animate__fadeIn');
+            setTimeout(() => {
+                cartSection.classList.remove('animate__animated', 'animate__fadeIn');
+            }, 1000);
+        }
+    }
+
+    function showConfirmation() {
+        alert('Producto agregado al carrito con éxito.');
+    }
+
+    function sendToWhatsApp() {
+        if (cart.length === 0) {
+            alert('El carrito está vacío. Agrega productos antes de enviar el pedido.');
+            return;
         }
 
-        function clearCart() {
-            cart = [];
-            updateCart();
-        }
+        let message = '¡Hola! Quiero realizar el siguiente pedido:\n\n';
+        cart.forEach(item => {
+            message += `${item.name} (${item.type})\n`;
+            message += `Color: ${item.color}\n`;
+            message += `Talle: ${item.size}\n`;
+            message += `Cantidad: ${item.quantity}\n`;
+            message += `Subtotal: $${item.subtotal.toFixed(2)}\n\n`;
+        });
+        message += `Total: $${cart.reduce((total, item) => total + item.subtotal, 0).toFixed(2)}`;
 
-        function updateCart() {
-            const cartItems = document.getElementById('cart-items');
-            const cartTotal = document.getElementById('cart-total');
-            const cartCount = document.getElementById('cart-count');
-            let total = 0;
+        const encodedMessage = encodeURIComponent(message);
+        const phoneNumber = '+5491154272065';
+        window.open(`https://wa.me/${phoneNumber}?text=${encodedMessage}`, '_blank');
+    }
 
-            cartItems.innerHTML = '';
-            cart.forEach(item => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${item.name}</td>
-                    <td>${item.type}</td>
-                    <td>${item.color}</td>
-                    <td>${item.size}</td>
-                    <td>${item.quantity}</td>
-                    <td>$${item.price.toFixed(2)}</td>
-                    <td>$${item.subtotal.toFixed(2)}</td>
-                    <td>
-                        <button class="btn btn-danger" onclick="removeFromCart(${item.id})"><i class="fas fa-trash"></i></button>
-                    </td>
-                `;
-                cartItems.appendChild(row);
-                total += item.subtotal;
-            });
-
-            cartTotal.textContent = total.toFixed(2);
-            cartCount.textContent = cart.reduce((count, item) => count + item.quantity, 0);
-            const cartSection = document.getElementById('cart');
-            if (cart.length === 0) {
-                cartSection.classList.add('hidden');
+    function filterProducts(sectionId, type) {
+        const section = document.getElementById(sectionId);
+        const products = section.querySelectorAll('.product-card');
+        products.forEach(product => {
+            if (type === 'all' || product.dataset.type === type) {
+                product.style.display = 'block';
+                product.classList.add('animate__animated', 'animate__fadeIn');
             } else {
-                cartSection.classList.remove('hidden');
+                product.style.display = 'none';
             }
-        }
+        });
+    }
 
-        function toggleCart() {
-            const cartSection = document.getElementById('cart');
-            cartSection.classList.toggle('hidden');
-            if (!cartSection.classList.contains('hidden')) {
-                cartSection.classList.add('animate__animated', 'animate__fadeIn');
-                setTimeout(() => {
-                    cartSection.classList.remove('animate__animated', 'animate__fadeIn');
-                }, 1000);
-            }
-        }
+    function initializeQuantityControls() {
+        document.querySelectorAll('.product-card').forEach(card => {
+            const quantityContainer = document.createElement('div');
+            quantityContainer.className = 'quantity-control';
+            quantityContainer.style.display = 'flex';
+            quantityContainer.style.alignItems = 'center';
+            quantityContainer.style.marginBottom = '10px';
+            quantityContainer.innerHTML = `
+                <span class="quantity-title" style="margin-right: 10px; font-size: 0.9rem; color: #6c757d;">Cantidad:</span>
+                <button class="btn quantity-btn decrease" style="padding: 5px 10px; font-size: 0.9rem;">−</button>
+                <input type="number" class="quantity-input" min="1" value="1" style="width: 50px; padding: 5px; margin: 0 5px; border: 1px solid #ddd; border-radius: 5px; text-align: center;">
+                <button class="btn quantity-btn increase" style="padding: 5px 10px; font-size: 0.9rem;">+</button>
+            `;
+            card.querySelector('.product-actions').before(quantityContainer);
 
-        function showConfirmation() {
-            alert('Producto agregado al carrito con éxito.');
-        }
+            const decreaseBtn = quantityContainer.querySelector('.decrease');
+            const increaseBtn = quantityContainer.querySelector('.increase');
+            const quantityInput = quantityContainer.querySelector('.quantity-input');
 
-        function sendToWhatsApp() {
-            if (cart.length === 0) {
-                alert('El carrito está vacío. Agrega productos antes de enviar el pedido.');
-                return;
-            }
-
-            let message = '¡Hola! Quiero realizar el siguiente pedido:\n\n';
-            cart.forEach(item => {
-                message += `${item.name} (${item.type})\n`;
-                message += `Color: ${item.color}\n`;
-                message += `Talle: ${item.size}\n`;
-                message += `Cantidad: ${item.quantity}\n`;
-                message += `Subtotal: $${item.subtotal.toFixed(2)}\n\n`;
-            });
-            message += `Total: $${cart.reduce((total, item) => total + item.subtotal, 0).toFixed(2)}`;
-
-            const encodedMessage = encodeURIComponent(message);
-            const phoneNumber = '+5491154272065';
-            window.open(`https://wa.me/${phoneNumber}?text=${encodedMessage}`, '_blank');
-        }
-
-        function filterProducts(sectionId, type) {
-            const section = document.getElementById(sectionId);
-            const products = section.querySelectorAll('.product-card');
-            products.forEach(product => {
-                if (type === 'all' || product.dataset.type === type) {
-                    product.style.display = 'block';
-                    product.classList.add('animate__animated', 'animate__fadeIn');
-                } else {
-                    product.style.display = 'none';
-                }
-            });
-        }
-
-        // Nueva funcionalidad: Control de cantidad en la tarjeta de producto
-        function initializeQuantityControls() {
-            document.querySelectorAll('.product-card').forEach(card => {
-                const quantityContainer = document.createElement('div');
-                quantityContainer.className = 'quantity-control';
-                quantityContainer.style.display = 'flex';
-                quantityContainer.style.alignItems = 'center';
-                quantityContainer.style.marginBottom = '10px';
-                quantityContainer.innerHTML = `
-                    <span class="quantity-title" style="margin-right: 10px; font-size: 0.9rem; color: #6c757d;">Cantidad:</span>
-                    <button class="btn quantity-btn decrease" style="padding: 5px 10px; font-size: 0.9rem;">−</button>
-                    <input type="number" class="quantity-input" min="1" value="1" style="width: 50px; padding: 5px; margin: 0 5px; border: 1px solid #ddd; border-radius: 5px; text-align: center;">
-                    <button class="btn quantity-btn increase" style="padding: 5px 10px; font-size: 0.9rem;">+</button>
-                `;
-                card.querySelector('.product-actions').before(quantityContainer);
-
-                const decreaseBtn = quantityContainer.querySelector('.decrease');
-                const increaseBtn = quantityContainer.querySelector('.increase');
-                const quantityInput = quantityContainer.querySelector('.quantity-input');
-
-                decreaseBtn.addEventListener('click', () => {
-                    let value = parseInt(quantityInput.value);
-                    if (value > 1) {
-                        quantityInput.value = value - 1;
-                    }
-                });
-
-                increaseBtn.addEventListener('click', () => {
-                    let value = parseInt(quantityInput.value);
-                    quantityInput.value = value + 1;
-                });
-
-                quantityInput.addEventListener('input', () => {
-                    if (quantityInput.value < 1 || isNaN(quantityInput.value)) {
-                        quantityInput.value = 1;
-                    }
-                });
-            });
-        }
-
-        function selectColor(element) {
-            const card = element.closest('.product-card');
-            card.querySelectorAll('.color-option').forEach(opt => opt.classList.remove('selected'));
-            element.classList.add('selected');
-        }
-
-        function selectSize(element) {
-            const card = element.closest('.product-card');
-            card.querySelectorAll('.size-option').forEach(opt => opt.classList.remove('selected'));
-            element.classList.add('selected');
-        }
-
-        function validateSelection(card) {
-            const selectedColor = card.querySelector('.color-option.selected');
-            const selectedSize = card.querySelector('.size-option.selected');
-            if (!selectedColor || !selectedSize) {
-                alert('Por favor, selecciona un color y un talle antes de agregar al carrito.');
-                return false;
-            }
-            return true;
-        }
-
-        function openModal(productName, productType, button) {
-            const card = button.closest('.product-card');
-            if (!validateSelection(card)) return;
-
-            currentProduct = productName;
-            currentType = productType;
-            const colors = card.querySelectorAll('.color-option');
-            const sizes = card.querySelectorAll('.size-option');
-            const modal = document.getElementById('buy-modal');
-            const modalTitle = document.getElementById('modal-title');
-            const modalColor = document.getElementById('modal-color');
-            const modalSize = document.getElementById('modal-size');
-            const modalQuantity = document.getElementById('modal-quantity');
-
-            modalTitle.textContent = `Confirmar Compra: ${productName}`;
-            modalColor.innerHTML = '';
-            modalSize.innerHTML = '';
-
-            colors.forEach(color => {
-                const option = document.createElement('option');
-                option.value = color.dataset.color;
-                option.textContent = color.dataset.color;
-                modalColor.appendChild(option);
-            });
-
-            sizes.forEach(size => {
-                if (!size.classList.contains('unavailable')) {
-                    const option = document.createElement('option');
-                    option.value = size.dataset.size;
-                    option.textContent = size.dataset.size;
-                    modalSize.appendChild(option);
+            decreaseBtn.addEventListener('click', () => {
+                let value = parseInt(quantityInput.value);
+                if (value > 1) {
+                    quantityInput.value = value - 1;
                 }
             });
 
-            const selectedColor = card.querySelector('.color-option.selected');
-            const selectedSize = card.querySelector('.size-option.selected');
-            const quantityInput = card.querySelector('.quantity-input');
-            if (selectedColor) modalColor.value = selectedColor.dataset.color;
-            if (selectedSize) modalSize.value = selectedSize.dataset.size;
-            modalQuantity.value = quantityInput ? quantityInput.value : '1';
+            increaseBtn.addEventListener('click', () => {
+                let value = parseInt(quantityInput.value);
+                quantityInput.value = value + 1;
+            });
 
-            modal.style.display = 'flex';
-            modal.classList.add('animate__animated', 'animate__fadeIn');
-        }
-
-        function addToCartFromModal() {
-            const color = document.getElementById('modal-color').value;
-            const size = document.getElementById('modal-size').value;
-            const quantity = parseInt(document.getElementById('modal-quantity').value);
-            const card = Array.from(document.querySelectorAll('.product-card')).find(
-                card => card.querySelector('.product-title').textContent === currentProduct
-            );
-            const priceText = card.querySelector('.product-price').childNodes[0].nodeValue.trim().replace('$', '').replace(',', '');
-            const price = parseFloat(priceText);
-
-            if (!color || !size || !quantity || quantity < 1) {
-                alert('Por favor, selecciona color, talle y una cantidad válida.');
-                return;
-            }
-
-            const item = {
-                id: Date.now(),
-                name: currentProduct,
-                type: currentType,
-                color: color,
-                size: size,
-                quantity: quantity,
-                price: price,
-                subtotal: price * quantity
-            };
-
-            cart.push(item);
-            updateCart();
-            closeModal();
-            showConfirmation();
-        }
-
-        document.querySelectorAll('.color-option').forEach(color => {
-            color.addEventListener('click', () => selectColor(color));
+            quantityInput.addEventListener('input', () => {
+                if (quantityInput.value < 1 || isNaN(quantityInput.value)) {
+                    quantityInput.value = 1;
+                }
+            });
         });
+    }
 
-        document.querySelectorAll('.size-option').forEach(size => {
-            size.addEventListener('click', () => selectSize(size));
-        });
+    document.querySelectorAll('.color-option').forEach(color => {
+        color.addEventListener('click', () => selectColor(color));
+    });
 
-        // Inicializar controles de cantidad al cargar la página
-        document.addEventListener('DOMContentLoaded', initializeQuantityControls);
-    </script>
+    document.querySelectorAll('.size-option').forEach(size => {
+        size.addEventListener('click', () => selectSize(size));
+    });
+</script>
