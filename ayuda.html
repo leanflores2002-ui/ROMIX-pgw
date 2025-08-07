@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Romix - Ayuda</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+    <style>
+        :root {
+            --primary: #e83e8c;
+            --secondary: #6f42c1;
+            --light: #f8f9fa;
+            --dark: #343a40;
+            --success: #28a745;
+            --danger: #dc3545;
+            --warning: #ffc107;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        
+        header {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 20px 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        
+        .header-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            font-size: 2rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+        }
+        
+        .logo i {
+            margin-right: 10px;
+        }
+        
+        .contact-header {
+            display: flex;
+            align-items: center;
+        }
+        
+        .whatsapp-header {
+            background-color: #25D366;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            font-weight: bold;
+            margin-left: 15px;
+        }
+        
+        .whatsapp-header i {
+            margin-right: 5px;
+        }
+        
+        .cart-icon {
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            font-size: 1.2rem;
+            margin-left: 15px;
+            position: relative;
+        }
+        
+        .cart-icon #cart-count {
+            background-color: var(--danger);
+            color: white;
+            border-radius: 50%;
+            padding: 2px 6px;
+            font-size: 0.8rem;
+            position: absolute;
+            top: -10px;
+            right: -10px;
+        }
+        
+        nav {
+            background-color: white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 80px;
+            z-index: 999;
+        }
+        
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        .nav-menu {
+            display: flex;
+            list-style: none;
+        }
+        
+        .nav-menu li {
+            position: relative;
+        }
+        
+        .nav-menu li a {
+            display: block;
+            padding: 15px 20px;
+            color: var(--dark);
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .nav-menu li a:hover {
+            color: var(--primary);
+            background-color: #f8f9fa;
+        }
+        
+        .nav-menu li.active a {
+            color: var(--primary);
+            border-bottom: 3px solid var(--primary);
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+        
+        .section-title {
+            font-size: 1.8rem;
+            color: var(--secondary);
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #eee;
+            display: flex;
+            align-items: center;
+        }
+        
+        .section-title i {
+            margin-right: 10px;
+        }
+        
+        .help-section {
+            background-color: white;
+            border-radius: 10px;
+            padding: 30px;
+            margin-top: 40px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+        
+        .help-section h3 {
+            color: var(--secondary);
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+        }
+        
+        .help-section p {
+            margin-bottom: 15px;
+            line-height: 1.6;
+        }
+        
+        .size-guide-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        .size-guide-table th, .size-guide-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .size-guide-table th {
+            background-color: var(--light);
+            font-weight: bold;
+            color: var(--secondary);
+        }
+        
+        .size-guide-table td {
+            font-size: 0.9rem;
+        }
+        
+        .returns-info ul {
+            list-style: none;
+            margin-bottom: 15px;
+        }
+        
+        .returns-info ul li {
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .returns-info ul li i {
+            margin-right: 10px;
+            color: var(--primary);
+        }
+        
+        footer {
+            background-color: var(--dark);
+            color: white;
+            padding: 30px 0;
+            margin-top: 50px;
+        }
+        
+        .footer-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 30px;
+        }
+        
+        .footer-column h4 {
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            color: var(--primary);
+        }
+        
+        .footer-column ul {
+            list-style: none;
+        }
+        
+        .footer-column ul li {
+            margin-bottom: 10px;
+        }
+        
+        .footer-column ul li a {
+            color: #adb5bd;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        
+        .footer-column ul li a:hover {
+            color: white;
+        }
+        
+        .social-links {
+            display: flex;
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .social-links a {
+            color: white;
+            background-color: #495057;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.3s;
+        }
+        
+        .social-links a:hover {
+            background-color: var(--primary);
+        }
+        
+        .copyright {
+            text-align: center;
+            padding-top: 20px;
+            margin-top: 20px;
+            border-top: 1px solid #495057;
+            color: #adb5bd;
+            font-size: 0.9rem;
+        }
+        
+        @media (max-width: 768px) {
+            .header-container {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .contact-header {
+                margin-top: 15px;
+            }
+            
+            .nav-menu {
+                overflow-x: auto;
+                white-space: nowrap;
+                padding-bottom: 10px;
+            }
+            
+            .size-guide-table {
+                font-size: 0.8rem;
+            }
+            
+            .size-guide-table th, .size-guide-table td {
+                padding: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-container">
+            <div class="logo">
+                <i class="fas fa-tshirt"></i>
+                <span>ROMIX</span>
+            </div>
+            <div class="contact-header">
+                <a href="https://wa.me/5491154272065" class="whatsapp-header">
+                    <i class="fab fa-whatsapp"></i> +54 9 11 5427-2065
+                </a>
+                <div class="cart-icon" onclick="window.location.href='index.html#cart'">
+                    <i class="fas fa-shopping-cart"></i>
+                    <span id="cart-count">0</span>
+                </div>
+            </div>
+        </div>
+    </header>
+    
+    <nav>
+        <div class="nav-container">
+            <ul class="nav-menu">
+                <li><a href="index.html#mujer"><i class="fas fa-female"></i> Mujer</a></li>
+                <li><a href="index.html#hombre"><i class="fas fa-male"></i> Hombre</a></li>
+                <li><a href="index.html#ninos"><i class="fas fa-child"></i> Niños</a></li>
+                <li><a href="index.html#contacto"><i class="fas fa-map-marker-alt"></i> Contacto</a></li>
+                <li class="active"><a href="ayuda.html"><i class="fas fa-question-circle"></i> Ayuda</a></li>
+            </ul>
+        </div>
+    </nav>
+    
+    <div class="container">
+        <section id="size-guide" class="help-section">
+            <h2 class="section-title"><i class="fas fa-ruler"></i> Guía de Talles</h2>
+            <p>Encuentra el talle perfecto para tus prendas con nuestras tablas de medidas. Todas las medidas están en centímetros y corresponden a las dimensiones del cuerpo, no de la prenda. Recomendamos medirte con una cinta métrica para asegurar el mejor ajuste.</p>
+            
+            <h3>Mujer - Pantalones y Calzas</h3>
+            <table class="size-guide-table">
+                <thead>
+                    <tr>
+                        <th>Talle</th>
+                        <th>Cintura</th>
+                        <th>Cadera</th>
+                        <th>Largo</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>1</td><td>60-64</td><td>86-90</td><td>98</td></tr>
+                    <tr><td>2</td><td>64-68</td><td>90-94</td><td>99</td></tr>
+                    <tr><td>3</td><td>68-72</td><td>94-98</td><td>100</td></tr>
+                    <tr><td>4</td><td>72-76</td><td>98-102</td><td>101</td></tr>
+                    <tr><td>5</td><td>76-80</td><td>102-106</td><td>102</td></tr>
+                    <tr><td>6</td><td>80-84</td><td>106-110</td><td>103</td></tr>
+                    <tr><td>7</td><td>84-88</td><td>110-114</td><td>104</td></tr>
+                    <tr><td>8</td><td>88-92</td><td>114-118</td><td>105</td></tr>
+                </tbody>
+            </table>
+            
+            <h3>Mujer - Camperas y Buzos</h3>
+            <table class="size-guide-table">
+                <thead>
+                    <tr>
+                        <th>Talle</th>
+                        <th>Busto</th>
+                        <th>Cintura</th>
+                        <th>Largo</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>1</td><td>80-84</td><td>60-64</td><td>60</td></tr>
+                    <tr><td>2</td><td>84-88</td><td>64-68</td><td>61</td></tr>
+                    <tr><td>3</td><td>88-92</td><td>68-72</td><td>62</td></tr>
+                    <tr><td>4</td><td>92-96</td><td>72-76</td><td>63</td></tr>
+                    <tr><td>5</td><td>96-100</td><td>76-80</td><td>64</td></tr>
+                    <tr><td>6</td><td>100-104</td><td>80-84</td><td>65</td></tr>
+                    <tr><td>7</td><td>104-108</td><td>84-88</td><td>66</td></tr>
+                    <tr><td>8</td><td>108-112</td><td>88-92</td><td>67</td></tr>
+                </tbody>
+            </table>
+            
+            <h3>Hombre - Pantalones</h3>
+            <table class="size-guide-table">
+                <thead>
+                    <tr>
+                        <th>Talle</th>
+                        <th>Cintura</th>
+                        <th>Cadera</th>
+                        <th>Largo</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>1</td><td>70-74</td><td>90-94</td><td>102</td></tr>
+                    <tr><td>2</td><td>74-78</td><td>94-98</td><td>103</td></tr>
+                    <tr><td>3</td><td>78-82</td><td>98-102</td><td>104</td></tr>
+                    <tr><td>4</td><td>82-86</td><td>102-106</td><td>105</td></tr>
+                    <tr><td>5</td><td>86-90</td><td>106-110</td><td>106</td></tr>
+                    <tr><td>6</td><td>90-94</td><td>110-114</td><td>107</td></tr>
+                    <tr><td>7</td><td>94-98</td><td>114-118</td><td>108</td></tr>
+                    <tr><td>8</td><td>98-102</td><td>118-122</td><td>109</td></tr>
+                </tbody>
+            </table>
+            
+            <h3>Hombre - Camperas, Buzos y Camisetas</h3>
+            <table class="size-guide-table">
+                <thead>
+                    <tr>
+                        <th>Talle</th>
+                        <th>Pecho</th>
+                        <th>Cintura</th>
+                        <th>Largo</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>1</td><td>88-92</td><td>70-74</td><td>65</td></tr>
+                    <tr><td>2</td><td>92-96</td><td>74-78</td><td>66</td></tr>
+                    <tr><td>3</td><td>96-100</td><td>78-82</td><td>67</td></tr>
+                    <tr><td>4</td><td>100-104</td><td>82-86</td><td>68</td></tr>
+                    <tr><td>5</td><td>104-108</td><td>86-90</td><td>69</td></tr>
+                    <tr><td>6</td><td>108-112</td><td>90-94</td><td>70</td></tr>
+                    <tr><td>7</td><td>112-116</td><td>94-98</td><td>71</td></tr>
+                    <tr><td>8</td><td>116-120</td><td>98-102</td><td>72</td></tr>
+                </tbody>
+            </table>
+            
+            <h3>Niños - Pantalones y Calzas</h3>
+            <table class="size-guide-table">
+                <thead>
+                    <tr>
+                        <th>Talle</th>
+                        <th>Cintura</th>
+                        <th>Cadera</th>
+                        <th>Largo</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>6</td><td>54-56</td><td>62-64</td><td>70</td></tr>
+                    <tr><td>8</td><td>56-58</td><td>64-66</td><td>75</td></tr>
+                    <tr><td>10</td><td>58-60</td><td>66-68</td><td>80</td></tr>
+                    <tr><td>12</td><td>60-62</td><td>68-70</td><td>85</td></tr>
+                    <tr><td>14</td><td>62-64</td><td>70-72</td><td>90</td></tr>
+                    <tr><td>16</td><td>64-66</td><td>72-74</td><td>95</td></tr>
+                </tbody>
+            </table>
+            
+            <h3>Niños - Camperas, Buzos y Camisetas</h3>
+            <table class="size-guide-table">
+                <thead>
+                    <tr>
+                        <th>Talle</th>
+                        <th>Pecho</th>
+                        <th>Cintura</th>
+                        <th>Largo</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>6</td><td>62-64</td><td>54-56</td><td>45</td></tr>
+                    <tr><td>8</td><td>64-66</td><td>56-58</td><td>48</td></tr>
+                    <tr><td>10</td><td>66-68</td><td>58-60</td><td>51</td></tr>
+                    <tr><td>12</td><td>68-70</td><td>60-62</td><td>54</td></tr>
+                    <tr><td>14</td><td>70-72</td><td>62-64</td><td>57</td></tr>
+                    <tr><td>16</td><td>72-74</td><td>64-66</td><td>60</td></tr>
+                </tbody>
+            </table>
+        </section>
+        
+        <section id="returns" class="help-section">
+            <h2 class="section-title"><i class="fas fa-exchange-alt"></i> Cambios</h2>
+            <p>En Romix, queremos que estés completamente satisfecho con tu compra. Si necesitas realizar un cambio o devolución, sigue estas indicaciones:</p>
+            
+            <h3>Condiciones para Cambios</h3>
+            <ul class="returns-info">
+                <li><i class="fas fa-check-circle"></i> Los cambios deben realizarse dentro de los 30 días posteriores a la compra.</li>
+                <li><i class="fas fa-check-circle"></i> La prenda debe estar sin usar y con etiquetas originales .</li>
+                <li><i class="fas fa-check-circle"></i> Puedes cambiar por otro talle, color; en caso de ser un cambio de talles comunes a especiales se podra hacer el cambio, pero pagando la diferencia.</li>
+                <li><i class="fas fa-check-circle"></i> Los cambios en tienda física no tienen costo.</li>
+            </ul>
+            
+            <h3>Proceso de Cambio </h3>
+            <p>Para iniciar un cambio :</p>
+            <ul class="returns-info">
+                <li><i class="fas fa-phone"></i> Contáctanos por WhatsApp al +54 9 11 5427-2065 o por email a info@romix.com.ar.</li>
+                <li><i class="fas fa-store"></i> Visita nuestra tienda en Concordia 514 local b, CABA, durante el horario de atención.</li>
+            </ul>
+            
+        </section>
+    </div>
+    
+    <footer>
+        <div class="footer-container">
+            <div class="footer-column">
+                <h4>Productos</h4>
+                <ul>
+                    <li><a href="index.html#mujer">Ropa para Mujer</a></li>
+                    <li><a href="index.html#hombre">Ropa para Hombre</a></li>
+                    <li><a href="index.html#ninos">Ropa para Niños</a></li>
+                    <li><a href="index.html">Novedades</a></li>
+                    <li><a href="index.html">Ofertas</a></li>
+                </ul>
+            </div>
+            <div class="footer-column">
+                <h4>Ayuda</h4>
+                <ul>
+                    <li><a href="#size-guide">Guía de talles</a></li>
+                    <li><a href="#returns">Cambios </a></li>
+                </ul>
+            </div>
+            <div class="footer-column">
+                <h4>Contacto</h4>
+                <ul>
+                    <li><a href="index.html#contacto">Dirección y horarios</a></li>
+                    <li><a href="https://wa.me/5491154272065">WhatsApp</a></li>
+                    <li><a href="tel:+5491154272065">Llamar por teléfono</a></li>
+                    <li><a href="mailto:info@romix.com.ar">Enviar email</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="copyright">
+            <p>&copy; 2025 Romix - Todos los derechos reservados</p>
+        </div>
+    </footer>
+</body>
+</html>
