@@ -204,6 +204,8 @@
         .carousel-dots { position: absolute; bottom: 6px; left: 0; right: 0; display: flex; justify-content: center; gap: 6px; }
         .carousel-dot { width: 6px; height: 6px; border-radius: 50%; background: #ced4da; }
         .carousel-dot.active { background: var(--primary); }
+
+        .helper-hint { font-size: 0.85rem; color: #6c757d; margin: 6px 0 8px; }
         
         .product-badge {
             position: absolute;
@@ -1504,6 +1506,48 @@
         }
     };
 
+    // Sobrescritura con datos por talle para coincidir con nombres correctos
+    Object.assign(stockData, {
+        'Calza Térmica Lycra Chupin': {
+            colors: {
+                'Negro': { sizes: { '1': 5, '2': 4, '3': 3, '4': 2, '5': 2, '6': 1, '7': 1, '8': 0 }, images: [
+                    'https://via.placeholder.com/600x400?text=Calza+Lycra+Negro+1',
+                    'https://via.placeholder.com/600x400?text=Calza+Lycra+Negro+2'
+                ]},
+                'Gris oscuro': { sizes: { '1': 0, '2': 1, '3': 1, '4': 0, '5': 0, '6': 0, '7': 0, '8': 0 }, images: [
+                    'https://via.placeholder.com/600x400?text=Calza+Lycra+Gris+1'
+                ]},
+                'Marrón': { sizes: { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0, '6': 0, '7': 0, '8': 0 }, images: [
+                    'https://via.placeholder.com/600x400?text=Calza+Lycra+Marron+1'
+                ]}
+            }
+        },
+        'Camiseta Térmica Frisado': {
+            colors: {
+                'Negro': { sizes: { 'S': 2, 'M': 2, 'L': 1, 'XL': 0 }, images: [
+                    'https://via.placeholder.com/600x400?text=Camiseta+Frisado+Negro+1'
+                ]},
+                'Azul': { sizes: { 'S': 0, 'M': 1, 'L': 0, 'XL': 0 }, images: [
+                    'https://via.placeholder.com/600x400?text=Camiseta+Frisado+Azul+1'
+                ]},
+                'Rojo': { sizes: { 'S': 0, 'M': 0, 'L': 0, 'XL': 0 }, images: [
+                    'https://via.placeholder.com/600x400?text=Camiseta+Frisado+Rojo+1'
+                ]}
+            }
+        },
+        'Campera Polar Corderito Largo': {
+            colors: {
+                'Gris': { sizes: { 'S': 1, 'M': 1, 'L': 1, 'XL': 0 }, images: [
+                    'https://via.placeholder.com/600x400?text=Campera+Corderito+Gris+1',
+                    'https://via.placeholder.com/600x400?text=Campera+Corderito+Gris+2'
+                ]},
+                'Negro': { sizes: { 'S': 0, 'M': 0, 'L': 0, 'XL': 0 }, images: [
+                    'https://via.placeholder.com/600x400?text=Campera+Corderito+Negro+1'
+                ]}
+            }
+        }
+    });
+
     const carouselState = new WeakMap();
     const LOW_STOCK_THRESHOLD = 3;
 
@@ -1516,7 +1560,20 @@
     function stockFor(productName, colorName) {
         const product = stockData[productName];
         const col = product?.colors?.[colorName];
-        return typeof col?.stock === 'number' ? col.stock : undefined;
+        if (!col) return undefined;
+        if (typeof col.stock === 'number') return col.stock;
+        if (col.sizes) {
+            return Object.values(col.sizes).reduce((a,b) => a + (typeof b === 'number' ? b : 0), 0);
+        }
+        return undefined;
+    }
+
+    function stockForSize(productName, colorName, sizeName) {
+        const product = stockData[productName];
+        const col = product?.colors?.[colorName];
+        if (!col) return undefined;
+        if (col.sizes && typeof col.sizes[sizeName] === 'number') return col.sizes[sizeName];
+        return undefined;
     }
 
     function statusFromQty(qty) {
@@ -1551,6 +1608,35 @@
                 c.title = `${cname} — Pocas unidades`;
             } else if (qty !== undefined) {
                 c.title = `${cname} — Disponible`;
+            }
+        });
+        if (!card.querySelector('.helper-hint')) {
+            const hint = document.createElement('div');
+            hint.className = 'helper-hint';
+            hint.textContent = 'Elegí un color para ver los talles disponibles.';
+            const colorsRow = card.querySelector('.product-colors');
+            colorsRow?.after(hint);
+        }
+    }
+
+    function updateSizesForColor(card, productName, colorName) {
+        const sizes = card.querySelectorAll('.size-option');
+        sizes.forEach(s => {
+            s.classList.remove('available', 'low-stock', 'unavailable');
+            const sizeName = s.dataset.size;
+            const qty = stockForSize(productName, colorName, sizeName);
+            if (qty === 0) {
+                s.classList.add('unavailable');
+                if (s.classList.contains('selected')) s.classList.remove('selected');
+                s.title = `${sizeName} — Agotado`;
+            } else if (typeof qty === 'number') {
+                if (qty <= LOW_STOCK_THRESHOLD) {
+                    s.classList.add('low-stock');
+                    s.title = `${sizeName} — Pocas unidades`;
+                } else {
+                    s.classList.add('available');
+                    s.title = `${sizeName} — Disponible`;
+                }
             }
         });
     }
@@ -1618,6 +1704,7 @@
                 renderStockIndicator(card, title, selected.dataset.color);
                 const imgs = stockData[title]?.colors?.[selected.dataset.color]?.images;
                 if (imgs && imgs.length) setupCarousel(card, imgs);
+                updateSizesForColor(card, title, selected.dataset.color);
             }
         });
         initializeQuantityControls();
@@ -1640,9 +1727,11 @@
         renderStockIndicator(card, title, colorName);
         const imgs = stockData[title]?.colors?.[colorName]?.images;
         if (imgs && imgs.length) setupCarousel(card, imgs);
+        updateSizesForColor(card, title, colorName);
     }
 
     function selectSize(element) {
+        if (element.classList.contains('unavailable')) return;
         const card = element.closest('.product-card');
         card.querySelectorAll('.size-option').forEach(opt => opt.classList.remove('selected'));
         element.classList.add('selected');
@@ -1687,24 +1776,39 @@
             modalColor.appendChild(option);
         });
 
-        sizes.forEach(size => {
-            if (!size.classList.contains('unavailable')) {
-                const option = document.createElement('option');
-                option.value = size.dataset.size;
-                option.textContent = size.dataset.size;
-                modalSize.appendChild(option);
-            }
-        });
+        // Cargar talles según color seleccionado en el modal
+        function fillModalSizes(colorName) {
+            modalSize.innerHTML = '';
+            sizes.forEach(size => {
+                const sz = size.dataset.size;
+                const qty = stockForSize(productName, colorName, sz);
+                if (typeof qty === 'number' && qty > 0) {
+                    const st = statusFromQty(qty);
+                    const option = document.createElement('option');
+                    option.value = sz;
+                    option.textContent = `${sz} (${st.label})`;
+                    modalSize.appendChild(option);
+                }
+            });
+        }
 
         const selectedColor = card.querySelector('.color-option.selected');
         const selectedSize = card.querySelector('.size-option.selected');
         const quantityInput = card.querySelector('.quantity-input');
         if (selectedColor) modalColor.value = selectedColor.dataset.color;
-        if (selectedSize) modalSize.value = selectedSize.dataset.size;
+        fillModalSizes(modalColor.value);
+        if (selectedSize && Array.from(modalSize.options).some(o => o.value === selectedSize.dataset.size)) {
+            modalSize.value = selectedSize.dataset.size;
+        }
         modalQuantity.value = quantityInput ? quantityInput.value : '1';
 
         modal.style.display = 'flex';
         modal.classList.add('animate__animated', 'animate__fadeIn');
+
+        // Cambiar talles cuando cambia el color en el modal
+        modalColor.onchange = () => {
+            fillModalSizes(modalColor.value);
+        };
     }
 
     function closeModal() {
@@ -1773,7 +1877,7 @@
                 <td>${item.name}</td>
                 <td>${item.type}</td>
                 <td><select class="cart-color"></select></td>
-                <td>${item.size}</td>
+                <td><select class="cart-size"></select></td>
                 <td><input type="number" class="cart-qty" min="1" value="${item.quantity}" style="width:70px;"></td>
                 <td>$${item.price.toFixed(2)}</td>
                 <td class="cart-subtotal">$${(item.price * item.quantity).toFixed(2)}</td>
@@ -1782,6 +1886,7 @@
                 </td>
             `;
             const colorSelect = row.querySelector('.cart-color');
+            const sizeSelect = row.querySelector('.cart-size');
             const card = getProductCardByName(item.name);
             const optionEls = card ? card.querySelectorAll('.color-option') : [];
             optionEls.forEach(opt => {
@@ -1797,6 +1902,35 @@
             });
             colorSelect.addEventListener('change', () => {
                 item.color = colorSelect.value;
+                // Re-llenar talles con el nuevo color
+                fillCartSizes();
+                localStorage.setItem('cart', JSON.stringify(cart));
+                updateCart();
+            });
+            function fillCartSizes() {
+                sizeSelect.innerHTML = '';
+                const sizesInCard = card ? card.querySelectorAll('.size-option') : [];
+                sizesInCard.forEach(szEl => {
+                    const sname = szEl.dataset.size;
+                    const qtySz = stockForSize(item.name, colorSelect.value, sname);
+                    if (typeof qtySz === 'number' && qtySz > 0) {
+                        const st = statusFromQty(qtySz);
+                        const o = document.createElement('option');
+                        o.value = sname;
+                        o.textContent = `${sname} (${st.label})`;
+                        if (sname === item.size) o.selected = true;
+                        sizeSelect.appendChild(o);
+                    }
+                });
+                // Si el talle seleccionado quedó no disponible, escoger el primero
+                if (!Array.from(sizeSelect.options).some(o => o.value === item.size)) {
+                    const first = sizeSelect.options[0];
+                    if (first) item.size = first.value;
+                }
+            }
+            fillCartSizes();
+            sizeSelect.addEventListener('change', () => {
+                item.size = sizeSelect.value;
                 localStorage.setItem('cart', JSON.stringify(cart));
                 updateCart();
             });
