@@ -704,6 +704,23 @@
             </div>
         </section>
         
+        <section id="catalogo">
+            <h2 class="section-title"><i class="fas fa-store"></i> Catálogo</h2>
+            <div class="filters">
+                <select onchange="filterProducts('catalogo', this.value)">
+                    <option value="all">Todos</option>
+                    <option value="calzas">Calzas</option>
+                    <option value="pantalones">Babuchas y Pantalones</option>
+                    <option value="tops">Tops</option>
+                    <option value="camperas">Camperas</option>
+                    <option value="buzos">Buzos y Otros</option>
+                    <option value="nena">Nena</option>
+                    <option value="hombre">Hombre</option>
+                </select>
+            </div>
+            <div class="products-grid" id="catalogo-grid"></div>
+        </section>
+
         <section id="mujer">
             <h2 class="section-title"><i class="fas fa-female"></i> Ropa para Mujer</h2>
             <div class="filters">
@@ -1551,6 +1568,151 @@
     const carouselState = new WeakMap();
     const LOW_STOCK_THRESHOLD = 3;
 
+    // Utilidades de catálogo
+    const DEFAULT_COLORS = ['Negro', 'Gris', 'Azul', 'Rojo'];
+    const SIZES_BOTTOMS = ['1','2','3','4','5','6','7','8'];
+    const SIZES_TOPS = ['S','M','L','XL'];
+    const SIZES_KIDS = ['6','8','10','12','14','16'];
+
+    // Registra stock por defecto: todas las talles con cantidad 2
+    function registerDefaultStock(productName, colors = DEFAULT_COLORS, sizes = SIZES_BOTTOMS) {
+        if (!window.stockData) window.stockData = {};
+        if (!stockData[productName]) stockData[productName] = { colors: {} };
+        colors.forEach(c => {
+            if (!stockData[productName].colors[c]) {
+                const sizesMap = {};
+                sizes.forEach(s => sizesMap[s] = 2);
+                stockData[productName].colors[c] = {
+                    sizes: sizesMap,
+                    images: [
+                        `https://via.placeholder.com/600x400?text=${encodeURIComponent(productName+' '+c)}+1`,
+                        `https://via.placeholder.com/600x400?text=${encodeURIComponent(productName+' '+c)}+2`
+                    ]
+                };
+            }
+        });
+    }
+
+    const productsCatalog = [
+        // CALZAS (Dama)
+        { name: 'Calza lycra chupin', type: 'calzas' },
+        { name: 'Calza lycra doble cintura', type: 'calzas' },
+        { name: 'Calza lycra doble cintura jaspeado', type: 'calzas' },
+        { name: 'Calza lycra recta', type: 'calzas' },
+        { name: 'Calza saplex jaspeado chupin', type: 'calzas' },
+        { name: 'Calza saplex jaspeado recta', type: 'calzas' },
+        { name: 'Calza oxford', type: 'calzas' },
+        { name: 'Calza oxford jaspeado saplex', type: 'calzas' },
+        { name: 'Calza lycra estampado', type: 'calzas' },
+        { name: 'Calza lycra arrugado', type: 'calzas' },
+        { name: 'Calza lycra combinado', type: 'calzas' },
+        { name: 'Calza algodón/lycra chupin', type: 'calzas' },
+        { name: 'Calza algodón/lycra recta', type: 'calzas' },
+        { name: 'Calza lycra frunce levanta cola', type: 'calzas' },
+        { name: 'Calza gofrada lycra dama', type: 'calzas' },
+        { name: 'Calza lycra morley dama', type: 'calzas' },
+
+        // BABUCHAS Y PANTALONES (Dama)
+        { name: 'Pantalón jogger rústico/lycra dama', type: 'pantalones' },
+        { name: 'Babucha jogger algodón rústico cargo dama', type: 'pantalones' },
+        { name: 'Pantalón rústico recto dama', type: 'pantalones' },
+        { name: 'Babucha modal con puño', type: 'pantalones' },
+        { name: 'Pantalón jogger de lycra dama', type: 'pantalones' },
+        { name: 'Pantalón jogger de lycra jaspeado dama', type: 'pantalones' },
+        { name: 'Pantalón modal con tira', type: 'pantalones' },
+        { name: 'Pantalón morley liviano dama', type: 'pantalones' },
+        { name: 'Palazo morley liviano dama', type: 'pantalones' },
+
+        // TOPS (Dama)
+        { name: 'Top liso y jaspeado', type: 'tops' },
+        { name: 'Top estampado', type: 'tops' },
+        { name: 'Top gofrada lycra dama', type: 'tops' },
+        { name: 'Top lycra morley dama', type: 'tops' },
+
+        // CAMPERAS Y BUZOS (Dama)
+        { name: 'Campera lycra', type: 'camperas' },
+        { name: 'Campera lycra estampado', type: 'camperas' },
+        { name: 'Campera jaspeado saplex', type: 'camperas' },
+        { name: 'Campera modal', type: 'camperas' },
+        { name: 'Campera lycra morley', type: 'camperas' },
+        { name: 'Campera rústico con lycra dama', type: 'camperas' },
+        { name: 'Remera manga larga morley viscosa dama', type: 'buzos' },
+        { name: 'Remera lycra dry deportivo dama', type: 'buzos' },
+        { name: 'Buzo rústico con lycra dama', type: 'buzos' },
+
+        // NENA
+        { name: 'Calza nena lycra liso', type: 'nena' },
+        { name: 'Calza nena jaspeado', type: 'nena' },
+        { name: 'Calza nena algodón/lycra', type: 'nena' },
+
+        // HOMBRE - BABUCHAS Y PANTALONES
+        { name: 'Babucha rústico/lycra hombre', type: 'hombre' },
+        { name: 'Babucha jogger lycra hombre', type: 'hombre' },
+        { name: 'Pantalón rústico con cierre hombre', type: 'hombre' },
+        { name: 'Babucha jogger lycra jaspeado hombre', type: 'hombre' },
+
+        // HOMBRE - CAMPERAS
+        { name: 'Campera lycra hombre', type: 'hombre' },
+        { name: 'Campera jaspeado hombre', type: 'hombre' },
+
+        // HOMBRE - BUZOS
+        { name: 'Buzo rústico con lycra hombre', type: 'hombre' },
+    ];
+
+    function sizesForType(type) {
+        if (type === 'tops' || type === 'buzos' || type === 'camperas') return SIZES_TOPS;
+        if (type === 'nena') return SIZES_KIDS;
+        if (type === 'hombre') return SIZES_TOPS; // hombre top-like default
+        return SIZES_BOTTOMS;
+    }
+
+    function colorsForType(type) {
+        return DEFAULT_COLORS;
+    }
+
+    function renderCatalog() {
+        const grid = document.getElementById('catalogo-grid');
+        if (!grid) return;
+        grid.innerHTML = '';
+        productsCatalog.forEach(p => {
+            const colors = colorsForType(p.type);
+            const sizes = sizesForType(p.type);
+            registerDefaultStock(p.name, colors, sizes);
+            const card = document.createElement('div');
+            card.className = 'product-card';
+            card.dataset.type = p.type;
+            card.innerHTML = `
+                <div class="product-image">
+                    <img src="https://via.placeholder.com/300x300?text=${encodeURIComponent(p.name)}" alt="${p.name}">
+                </div>
+                <div class="product-info">
+                    <h3 class="product-title">${p.name}</h3>
+                    <div class="product-price">$0</div>
+                    <div class="product-colors">
+                        ${colors.map(c => `<div class="color-option" title="${c}" data-color="${c}" style="background-color: ${c==='Negro'?'#000000':c==='Gris'?'#777777':c==='Azul'?'#0066ff':c==='Rojo'?'#ff3333':'#cccccc'};"></div>`).join('')}
+                    </div>
+                    <div class="product-sizes">
+                        <div class="size-title">Talles disponibles:</div>
+                        <div class="size-options">
+                            ${sizes.map(s => `<span class="size-option available" data-size="${s}">${s}</span>`).join('')}
+                        </div>
+                    </div>
+                    <div class="product-actions">
+                        <button class="btn btn-primary" onclick="openModal('${p.name.replace(/'/g, "\'")}', '${p.type}', this)">Comprar</button>
+                        <button class="btn btn-outline"><i class="far fa-heart"></i></button>
+                    </div>
+                </div>`;
+            grid.appendChild(card);
+        });
+        // Enlazar eventos para cards recién renderizadas
+        grid.querySelectorAll('.color-option').forEach(color => {
+            color.addEventListener('click', () => selectColor(color));
+        });
+        grid.querySelectorAll('.size-option').forEach(size => {
+            size.addEventListener('click', () => selectSize(size));
+        });
+    }
+
     function getProductCardByName(name) {
         return Array.from(document.querySelectorAll('.product-card')).find(card =>
             (card.querySelector('.product-title')?.textContent || '').trim() === name.trim()
@@ -1695,6 +1857,8 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
+        // Render dinámico del catálogo y luego configurar stock
+        renderCatalog();
         // Configurar stock e imágenes por tarjeta
         document.querySelectorAll('.product-card').forEach(card => {
             setupCardStock(card);
