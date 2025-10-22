@@ -197,6 +197,13 @@
             max-height: 80%;
             object-fit: contain;
         }
+
+        /* Controles de carrusel en imágenes de producto */
+        .carousel-nav { position: absolute; top: 50%; transform: translateY(-50%); width: 100%; display: flex; justify-content: space-between; pointer-events: none; }
+        .carousel-btn { pointer-events: auto; background: rgba(255,255,255,0.85); border: 1px solid #ddd; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #333; }
+        .carousel-dots { position: absolute; bottom: 6px; left: 0; right: 0; display: flex; justify-content: center; gap: 6px; }
+        .carousel-dot { width: 6px; height: 6px; border-radius: 50%; background: #ced4da; }
+        .carousel-dot.active { background: var(--primary); }
         
         .product-badge {
             position: absolute;
@@ -255,6 +262,20 @@
         .color-option.selected {
             border: 2px solid var(--primary);
         }
+
+        /* Estado de color según stock */
+        .color-option.disabled { cursor: not-allowed; opacity: 0.4; position: relative; }
+        .color-option.disabled::after {
+            content: '\u2716';
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            font-size: 12px; color: var(--danger);
+        }
+
+        .stock-indicator { display: flex; align-items: center; gap: 8px; margin: 8px 0 12px 0; font-size: 0.9rem; color: #495057; }
+        .stock-indicator .light { width: 10px; height: 10px; border-radius: 50%; box-shadow: 0 0 0 2px rgba(0,0,0,0.05) inset; }
+        .stock-ok { background-color: var(--success); }
+        .stock-low { background-color: var(--warning); }
+        .stock-out { background-color: var(--danger); }
         
         .product-sizes {
             margin-bottom: 15px;
@@ -1441,7 +1462,164 @@
     let currentProduct = null;
     let currentType = null;
 
+    // Datos de stock e imágenes por color (ejemplo)
+    const stockData = {
+        'Calza Térmica Lycra Chupin': {
+            colors: {
+                'Negro': { stock: 8, images: [
+                    'https://via.placeholder.com/600x400?text=Calza+Lycra+Negro+1',
+                    'https://via.placeholder.com/600x400?text=Calza+Lycra+Negro+2'
+                ]},
+                'Gris oscuro': { stock: 2, images: [
+                    'https://via.placeholder.com/600x400?text=Calza+Lycra+Gris+1'
+                ]},
+                'Marrón': { stock: 0, images: [
+                    'https://via.placeholder.com/600x400?text=Calza+Lycra+Marron+1'
+                ]}
+            }
+        },
+        'Camiseta Térmica Frisado': {
+            colors: {
+                'Negro': { stock: 5, images: [
+                    'https://via.placeholder.com/600x400?text=Camiseta+Frisado+Negro+1'
+                ]},
+                'Azul': { stock: 1, images: [
+                    'https://via.placeholder.com/600x400?text=Camiseta+Frisado+Azul+1'
+                ]},
+                'Rojo': { stock: 0, images: [
+                    'https://via.placeholder.com/600x400?text=Camiseta+Frisado+Rojo+1'
+                ]}
+            }
+        },
+        'Campera Polar Corderito Largo': {
+            colors: {
+                'Gris': { stock: 3, images: [
+                    'https://via.placeholder.com/600x400?text=Campera+Corderito+Gris+1',
+                    'https://via.placeholder.com/600x400?text=Campera+Corderito+Gris+2'
+                ]},
+                'Negro': { stock: 0, images: [
+                    'https://via.placeholder.com/600x400?text=Campera+Corderito+Negro+1'
+                ]}
+            }
+        }
+    };
+
+    const carouselState = new WeakMap();
+    const LOW_STOCK_THRESHOLD = 3;
+
+    function getProductCardByName(name) {
+        return Array.from(document.querySelectorAll('.product-card')).find(card =>
+            (card.querySelector('.product-title')?.textContent || '').trim() === name.trim()
+        );
+    }
+
+    function stockFor(productName, colorName) {
+        const product = stockData[productName];
+        const col = product?.colors?.[colorName];
+        return typeof col?.stock === 'number' ? col.stock : undefined;
+    }
+
+    function statusFromQty(qty) {
+        if (qty === 0) return { cls: 'stock-out', label: 'Agotado' };
+        if (qty !== undefined && qty <= LOW_STOCK_THRESHOLD) return { cls: 'stock-low', label: 'Pocas unidades' };
+        return { cls: 'stock-ok', label: 'Disponible' };
+    }
+
+    function renderStockIndicator(card, productName, colorName) {
+        let indicator = card.querySelector('.stock-indicator');
+        if (!indicator) {
+            indicator = document.createElement('div');
+            indicator.className = 'stock-indicator';
+            const colorsRow = card.querySelector('.product-colors');
+            colorsRow?.after(indicator);
+        }
+        const qty = stockFor(productName, colorName);
+        const st = statusFromQty(qty);
+        indicator.innerHTML = `<span class="light ${st.cls}"></span><span>${colorName ? colorName + ' — ' : ''}${st.label}</span>`;
+    }
+
+    function setupCardStock(card) {
+        const title = (card.querySelector('.product-title')?.textContent || '').trim();
+        const colors = card.querySelectorAll('.color-option');
+        colors.forEach(c => {
+            const cname = c.dataset.color;
+            const qty = stockFor(title, cname);
+            if (qty === 0) {
+                c.classList.add('disabled');
+                c.title = `${cname} — Agotado`;
+            } else if (qty !== undefined && qty <= LOW_STOCK_THRESHOLD) {
+                c.title = `${cname} — Pocas unidades`;
+            } else if (qty !== undefined) {
+                c.title = `${cname} — Disponible`;
+            }
+        });
+    }
+
+    function setupCarousel(card, images) {
+        const imgEl = card.querySelector('.product-image img');
+        if (!imgEl || !images || images.length === 0) return;
+        carouselState.set(card, { images, index: 0, imgEl });
+        imgEl.src = images[0];
+
+        let nav = card.querySelector('.carousel-nav');
+        if (!nav) {
+            nav = document.createElement('div');
+            nav.className = 'carousel-nav';
+            nav.innerHTML = `
+                <button class="carousel-btn prev" aria-label="Anterior"><i class="fas fa-chevron-left"></i></button>
+                <button class="carousel-btn next" aria-label="Siguiente"><i class="fas fa-chevron-right"></i></button>
+            `;
+            card.querySelector('.product-image')?.appendChild(nav);
+            nav.querySelector('.prev').addEventListener('click', () => shiftCarousel(card, -1));
+            nav.querySelector('.next').addEventListener('click', () => shiftCarousel(card, 1));
+        }
+
+        renderDots(card);
+    }
+
+    function renderDots(card) {
+        const state = carouselState.get(card);
+        if (!state) return;
+        let dots = card.querySelector('.carousel-dots');
+        if (!dots) {
+            dots = document.createElement('div');
+            dots.className = 'carousel-dots';
+            card.querySelector('.product-image')?.appendChild(dots);
+        }
+        dots.innerHTML = '';
+        state.images.forEach((_, i) => {
+            const d = document.createElement('div');
+            d.className = 'carousel-dot' + (i === state.index ? ' active' : '');
+            d.addEventListener('click', () => setCarouselIndex(card, i));
+            dots.appendChild(d);
+        });
+    }
+
+    function setCarouselIndex(card, i) {
+        const state = carouselState.get(card);
+        if (!state) return;
+        state.index = (i + state.images.length) % state.images.length;
+        state.imgEl.src = state.images[state.index];
+        renderDots(card);
+    }
+
+    function shiftCarousel(card, delta) {
+        const state = carouselState.get(card);
+        setCarouselIndex(card, (state?.index || 0) + delta);
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
+        // Configurar stock e imágenes por tarjeta
+        document.querySelectorAll('.product-card').forEach(card => {
+            setupCardStock(card);
+            const selected = card.querySelector('.color-option.selected') || card.querySelector('.color-option:not(.disabled)');
+            if (selected) {
+                const title = (card.querySelector('.product-title')?.textContent || '').trim();
+                renderStockIndicator(card, title, selected.dataset.color);
+                const imgs = stockData[title]?.colors?.[selected.dataset.color]?.images;
+                if (imgs && imgs.length) setupCarousel(card, imgs);
+            }
+        });
         initializeQuantityControls();
         updateCart();
     });
@@ -1451,9 +1629,17 @@
     }
 
     function selectColor(element) {
+        if (element.classList.contains('disabled')) {
+            return;
+        }
         const card = element.closest('.product-card');
         card.querySelectorAll('.color-option').forEach(opt => opt.classList.remove('selected'));
         element.classList.add('selected');
+        const title = (card.querySelector('.product-title')?.textContent || '').trim();
+        const colorName = element.dataset.color;
+        renderStockIndicator(card, title, colorName);
+        const imgs = stockData[title]?.colors?.[colorName]?.images;
+        if (imgs && imgs.length) setupCarousel(card, imgs);
     }
 
     function selectSize(element) {
@@ -1491,9 +1677,13 @@
         modalSize.innerHTML = '';
 
         colors.forEach(color => {
+            if (color.classList.contains('disabled')) return; // omitir agotados
             const option = document.createElement('option');
-            option.value = color.dataset.color;
-            option.textContent = color.dataset.color;
+            const cname = color.dataset.color;
+            const qty = stockFor(productName, cname);
+            const st = statusFromQty(qty);
+            option.value = cname;
+            option.textContent = `${cname} (${st.label})`;
             modalColor.appendChild(option);
         });
 
@@ -1582,17 +1772,44 @@
             row.innerHTML = `
                 <td>${item.name}</td>
                 <td>${item.type}</td>
-                <td>${item.color}</td>
+                <td><select class="cart-color"></select></td>
                 <td>${item.size}</td>
-                <td>${item.quantity}</td>
+                <td><input type="number" class="cart-qty" min="1" value="${item.quantity}" style="width:70px;"></td>
                 <td>$${item.price.toFixed(2)}</td>
-                <td>$${item.subtotal.toFixed(2)}</td>
+                <td class="cart-subtotal">$${(item.price * item.quantity).toFixed(2)}</td>
                 <td>
                     <button class="btn btn-danger" onclick="removeFromCart(${item.id})"><i class="fas fa-trash"></i></button>
                 </td>
             `;
+            const colorSelect = row.querySelector('.cart-color');
+            const card = getProductCardByName(item.name);
+            const optionEls = card ? card.querySelectorAll('.color-option') : [];
+            optionEls.forEach(opt => {
+                const optEl = document.createElement('option');
+                const cname = opt.dataset.color;
+                const qty = stockFor(item.name, cname);
+                const st = statusFromQty(qty);
+                optEl.value = cname;
+                optEl.textContent = `${cname} (${st.label})`;
+                if (qty === 0) optEl.disabled = true;
+                if (cname === item.color) optEl.selected = true;
+                colorSelect.appendChild(optEl);
+            });
+            colorSelect.addEventListener('change', () => {
+                item.color = colorSelect.value;
+                localStorage.setItem('cart', JSON.stringify(cart));
+                updateCart();
+            });
+            const qtyInput = row.querySelector('.cart-qty');
+            qtyInput.addEventListener('input', () => {
+                const q = Math.max(1, parseInt(qtyInput.value || '1'));
+                item.quantity = q;
+                item.subtotal = item.price * q;
+                localStorage.setItem('cart', JSON.stringify(cart));
+                updateCart();
+            });
             cartItems.appendChild(row);
-            total += item.subtotal;
+            total += (item.price * item.quantity);
         });
 
         cartTotal.textContent = total.toFixed(2);
@@ -1607,13 +1824,12 @@
 
     function toggleCart() {
         const cartSection = document.getElementById('cart');
-        cartSection.classList.toggle('hidden');
-        if (!cartSection.classList.contains('hidden')) {
-            cartSection.classList.add('animate__animated', 'animate__fadeIn');
-            setTimeout(() => {
-                cartSection.classList.remove('animate__animated', 'animate__fadeIn');
-            }, 1000);
-        }
+        cartSection.classList.remove('hidden');
+        cartSection.classList.add('animate__animated', 'animate__fadeIn');
+        setTimeout(() => {
+            cartSection.classList.remove('animate__animated', 'animate__fadeIn');
+        }, 600);
+        cartSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
     function showConfirmation() {
