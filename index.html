@@ -2333,9 +2333,27 @@
     let PRODUCTS = [];
     async function loadProductsJSON() {
         try {
-            const res = await fetch('data/products.json', { cache: 'no-store' });
-            if (!res.ok) return;
-            PRODUCTS = await res.json();
+            // Resolver ruta para GitHub Pages (proyecto) y root local
+            const currentDir = location.pathname.endsWith('/')
+                ? location.pathname
+                : location.pathname.replace(/[^/]*$/, '');
+            const repoBase = (window.REPO_BASE || '').replace(/^\/+|\/+$/g, '');
+            const candidates = [
+                'data/products.json',
+                currentDir + 'data/products.json',
+                repoBase ? `/${repoBase}/data/products.json` : null,
+                '/data/products.json'
+            ].filter(Boolean);
+
+            let json = null, lastErr = null;
+            for (const url of candidates) {
+                try {
+                    const r = await fetch(url, { cache: 'no-store' });
+                    if (r.ok) { json = await r.json(); break; }
+                } catch (e) { lastErr = e; }
+            }
+            if (!json) { console.warn('No se pudo cargar products.json', lastErr); return; }
+            PRODUCTS = json;
             // Construye PRICE_TABLE y ALLOWED_SIZES_TABLE desde JSON
             PRODUCTS.forEach(p => {
                 if (typeof p.price_common === 'number') {
