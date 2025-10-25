@@ -11,7 +11,9 @@ SCHEMA_PATH = os.path.join(BASE_DIR, 'db', 'schema.sql')
 
 
 def get_conn():
-    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
+    dirpath = os.path.dirname(DB_PATH)
+    if dirpath:
+        os.makedirs(dirpath, exist_ok=True)
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     conn.execute('PRAGMA foreign_keys = ON;')
@@ -24,24 +26,28 @@ def init_db():
 
 
 def upsert_product(conn, name, ptype=None, base_price=0.0):
-    cur = conn.execute(
+    # Evita usar RETURNING por compatibilidad con SQLite < 3.35
+    conn.execute(
         'INSERT INTO products(name, type, base_price) VALUES(?,?,?)
-         ON CONFLICT(name) DO UPDATE SET updated_at = datetime("now")
-         RETURNING id', (name, ptype, base_price)
+         ON CONFLICT(name) DO UPDATE SET updated_at = datetime("now")',
+        (name, ptype, base_price)
     )
-    return cur.fetchone()[0]
+    row = conn.execute('SELECT id FROM products WHERE name=?', (name,)).fetchone()
+    return row['id']
 
 
 def upsert_variant(conn, product_id, color, size, on_hand_delta=0):
-    cur = conn.execute(
+    # Evita RETURNING. Asegura fila y luego retorna id.
+    conn.execute(
         'INSERT INTO product_variants(product_id, color, size, on_hand)
          VALUES(?,?,?,?)
          ON CONFLICT(product_id, color, size)
          DO UPDATE SET on_hand = product_variants.on_hand + excluded.on_hand,
-                       updated_at = datetime("now")
-         RETURNING id', (product_id, color, size, max(0, on_hand_delta))
+                       updated_at = datetime("now")',
+        (product_id, color, size, max(0, on_hand_delta))
     )
-    return cur.fetchone()[0]
+    row = conn.execute('SELECT id FROM product_variants WHERE product_id=? AND color=? AND size=?', (product_id, color, size)).fetchone()
+    return row['id']
 
 
 def dict_from_stock(conn):
