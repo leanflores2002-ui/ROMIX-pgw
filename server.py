@@ -4,8 +4,10 @@ import sqlite3
 from urllib.parse import urlparse
 from http.server import SimpleHTTPRequestHandler, HTTPServer
 
-DB_PATH = os.path.join(os.path.dirname(__file__), 'db', 'romix.db')
-SCHEMA_PATH = os.path.join(os.path.dirname(__file__), 'db', 'schema.sql')
+BASE_DIR = os.path.dirname(__file__)
+DEFAULT_DB = os.path.join(BASE_DIR, 'db', 'romix.db')
+DB_PATH = os.environ.get('DB_PATH', DEFAULT_DB)
+SCHEMA_PATH = os.path.join(BASE_DIR, 'db', 'schema.sql')
 
 
 def get_conn():
@@ -142,6 +144,15 @@ class Handler(SimpleHTTPRequestHandler):
 
     def do_GET(self):
         parsed = urlparse(self.path)
+        if parsed.path == '/health':
+            body = b'OK'
+            self.send_response(200)
+            self._set_cors()
+            self.send_header('Content-Type', 'text/plain; charset=utf-8')
+            self.send_header('Content-Length', str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+            return
         if parsed.path == '/api/stock':
             try:
                 with get_conn() as conn:
