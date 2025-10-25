@@ -1481,10 +1481,21 @@
     let currentProduct = null;
     let currentType = null;
 
+    // Configuración API: definir `window.API_BASE` antes de cargar la página,
+    // o guardar en localStorage bajo la clave `API_BASE`.
+    // Ejemplos:
+    //   window.API_BASE = 'https://tu-backend.up.railway.app';
+    //   localStorage.setItem('API_BASE', 'https://tu-backend.up.railway.app');
+    const API_BASE = (window.API_BASE || localStorage.getItem('API_BASE') || '').replace(/\/$/, '');
+    function apiUrl(path) {
+        if (!API_BASE) return path; // relativo al mismo host si no se configuró
+        return API_BASE + (path.startsWith('/') ? path : '/' + path);
+    }
+
     // Carga de stock desde backend (si está disponible)
     async function loadBackendStock() {
         try {
-            const res = await fetch('/api/stock', { cache: 'no-store' });
+            const res = await fetch(apiUrl('/api/stock'), { cache: 'no-store' });
             if (res.ok) {
                 const data = await res.json();
                 Object.assign(stockData, data);
@@ -2163,7 +2174,7 @@
                 quantity: item.quantity,
                 unit_price: item.price
             }));
-            const resp = await fetch('/api/orders', {
+            const resp = await fetch(apiUrl('/api/orders'), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ items, channel: 'web', note: 'Pedido enviado por WhatsApp' })

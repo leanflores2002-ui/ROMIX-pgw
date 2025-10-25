@@ -265,7 +265,13 @@ def ensure_seed():
                 restock_variant(conn, name, color, size, qty)
 
 
-def run(host='127.0.0.1', port=8000):
+def run(host=None, port=None):
+    # Railway: usa PORT y 0.0.0.0
+    host = host or os.environ.get('HOST', '0.0.0.0')
+    try:
+        port = int(os.environ.get('PORT', str(port or 8000)))
+    except ValueError:
+        port = 8000
     init_db()
     ensure_seed()
     httpd = HTTPServer((host, port), Handler)
@@ -276,4 +282,3 @@ def run(host='127.0.0.1', port=8000):
 
 if __name__ == '__main__':
     run()
-
