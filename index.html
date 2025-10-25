@@ -1768,6 +1768,40 @@
         return { cls: 'stock-ok', label: 'Disponible' };
     }
 
+    function productTotalAvailable(productName) {
+        const product = stockData[productName];
+        if (!product || !product.colors) return 0;
+        let total = 0;
+        for (const c of Object.keys(product.colors)) {
+            const col = product.colors[c];
+            if (typeof col.stock === 'number') total += col.stock;
+            if (col.sizes) total += Object.values(col.sizes).reduce((a, b) => a + (typeof b === 'number' ? b : 0), 0);
+        }
+        return total;
+    }
+
+    async function refreshAllStockUI() {
+        await loadBackendStock();
+        document.querySelectorAll('.product-card').forEach(card => {
+            const title = (card.querySelector('.product-title')?.textContent || '').trim();
+            // Ocultar carta si no queda disponibilidad total
+            const total = productTotalAvailable(title);
+            if (typeof total === 'number' && total <= 0) {
+                card.style.display = 'none';
+                return;
+            } else {
+                card.style.display = 'block';
+            }
+            setupCardStock(card);
+            const selectedColor = card.querySelector('.color-option.selected');
+            if (selectedColor) {
+                updateSizesForColor(card, title, selectedColor.dataset.color);
+            }
+        });
+        // Cart puede necesitar revalidación de talles/colores
+        updateCart();
+    }
+
     function renderStockIndicator(card, productName, colorName) {
         let indicator = card.querySelector('.stock-indicator');
         if (!indicator) {
@@ -1895,7 +1929,7 @@
                 if (imgs && imgs.length) setupCarousel(card, imgs);
                 updateSizesForColor(card, title, selected.dataset.color);
             }
-        });
+        });\n        // Refresco automático de stock cada 30s\n        setInterval(() => { refreshAllStockUI(); }, 30000);\n
         initializeQuantityControls();
         updateCart();
     });
@@ -2273,4 +2307,6 @@
         size.addEventListener('click', () => selectSize(size));
     });
 </script>
+
+
 
