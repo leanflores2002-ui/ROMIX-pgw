@@ -1,0 +1,72 @@
+[
+  {
+    "name": "Calza lycra chupin",
+    "section": "mujer",
+    "type": "calzas",
+    "price_common": 9500,
+    "price_special": 10000,
+    "colors": ["Negro","Gris"],
+    "allowed_sizes": ["1","2","3","4","5","6","7","8"],
+    "images": ["https://placehold.co/300x300?text=Calza+Lycra+Chupin"]
+  },
+  {
+    "name": "Pantalón jogger lycra dama",
+    "section": "mujer",
+    "type": "pantalones",
+    "price_common": 12900,
+    "price_special": 13400,
+    "colors": ["Negro","Gris"],
+    "allowed_sizes": ["1","2","3","4","5","6","7","8"],
+    "images": ["https://placehold.co/300x300?text=Pantalon+Jogger+Lycra"]
+  },
+  {
+    "name": "Babucha modal con puño",
+    "section": "mujer",
+    "type": "pantalones",
+    "price_common": 7000,
+    "price_special": 7500,
+    "colors": ["Negro","Gris"],
+    "allowed_sizes": ["1","2","3","4","5","6","7","8"],
+    "images": ["https://placehold.co/300x300?text=Babucha+Modal+con+Puno"]
+  },
+  {
+    "name": "Ciclista lycra morley",
+    "section": "mujer",
+    "type": "ciclistas",
+    "price_common": 8200,
+    "price_special": null,
+    "colors": ["Negro","Azul"],
+    "allowed_sizes": ["1","2","3","4","5"],
+    "images": ["https://placehold.co/300x300?text=Ciclista+Lycra+Morley"]
+  },
+  {
+    "name": "Remera lycra dry deportivo hombre",
+    "section": "hombre",
+    "type": "remeras",
+    "price_common": 9400,
+    "price_special": 9900,
+    "colors": ["Negro","Azul"],
+    "allowed_sizes": ["1","2","3","4","5","6","7","8"],
+    "images": ["https://placehold.co/300x300?text=Remera+Dry+Hombre"]
+  },
+  {
+    "name": "Bermuda rústico hombre",
+    "section": "hombre",
+    "type": "bermudas",
+    "price_common": 9300,
+    "price_special": 9900,
+    "colors": ["Negro","Gris"],
+    "allowed_sizes": ["1","2","3","4","5","6","7","8"],
+    "images": ["https://placehold.co/300x300?text=Bermuda+Rustico+Hombre"]
+  },
+  {
+    "name": "Ciclista nena lycra liso",
+    "section": "ninos",
+    "type": "ciclistas",
+    "price_common": 3400,
+    "price_special": 3800,
+    "colors": ["Negro","Rosa"],
+    "allowed_sizes": ["1","2","3","4","5"],
+    "images": ["https://placehold.co/300x300?text=Ciclista+Nena+Liso"]
+  }
+]

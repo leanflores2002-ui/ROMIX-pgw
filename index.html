@@ -1602,6 +1602,39 @@
     const SIZES_TOPS = ['S','M','L','XL'];
     const SIZES_KIDS = ['6','8','10','12','14','16'];
 
+    function normalizeName(s) {
+        return (s || "").toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu, "").replace(/\s+/g, " ").trim();
+    }
+
+    const ALLOWED_SIZES_TABLE = {
+        [normalizeName("Ciclista lycra morley")]: ["1","2","3","4","5"],
+        [normalizeName("Ciclista lycra estampado")]: ["1","2","3","4","5"],
+        [normalizeName("Ciclista nena lycra liso")]: ["1","2","3","4","5"],
+        [normalizeName("Ciclista nena jaspeado")]: ["1","2","3","4","5"],
+        [normalizeName("Ciclista nena algodón/lycra")]: ["1","2","3","4","5"],
+        [normalizeName("Top lycra liso y jaspeado nena")]: ["1","2","3","4","5"],
+        [normalizeName("Top lycra estampado nena")]: ["1","2","3","4","5"],
+        [normalizeName("Bermuda algodón rústico premium niño")]: ["1","2","3","4","5"],
+        [normalizeName("Short lycra morley")]: ["1","2","3","4","5"],
+        [normalizeName("Short lycra estampado")]: ["1","2","3","4","5"],
+        [normalizeName("Pollera short morley lycra c/bolsillo")]: ["1","2","3","4","5"],
+        [normalizeName("Pollera short lycra")]: ["1","2","3","4","5"],
+        [normalizeName("Remera lycra dama")]: ["2","3","4","5","6","7","8"],
+        [normalizeName("Remera lycra dry dama")]: ["2","3","4","5","6","7","8"],
+        [normalizeName("Musculosa viscosa-morley")]: ["2","3","4","5","6","7","8"],
+        [normalizeName("Camisola fibrana dama")]: ["3","4","5","6","7","8"],
+        [normalizeName("Remera lycra dry deportivo hombre")]: ["1","2","3","4","5","6","7","8"],
+        [normalizeName("Bermuda rústico hombre")]: ["1","2","3","4","5","6","7","8"],
+        [normalizeName("Bermuda lycra liso hombre")]: ["1","2","3","4","5","6","7","8"],
+        [normalizeName("Bermuda lycra jaspeado hombre")]: ["1","2","3","4","5","6","7","8"],
+        [normalizeName("Remera algodón jaspeado hombre")]: ["1","2","3","4","5","6","7","8"]
+    };
+
+    function allowedSizesFor(productName, fallbackSizes) {
+        const norm = normalizeName(productName);
+        return ALLOWED_SIZES_TABLE[norm] || fallbackSizes || SIZES_BOTTOMS;
+    }
+
     // Registra stock por defecto: todas las talles con cantidad 2
     function registerDefaultStock(productName, colors = DEFAULT_COLORS, sizes = SIZES_BOTTOMS) {
         if (!window.stockData) window.stockData = {};
@@ -1827,7 +1860,7 @@
 
         modalTitle.textContent = `Confirmar Compra: ${productName}`;
         modalColor.innerHTML = '';
-        modalSize.innerHTML = '';
+        modalSize.innerHTML = ''; const allowed = new Set(allowedSizesFor(productName, Array.from(sizes).map(s => s.dataset.size)));
 
         colors.forEach(color => {
             if (color.classList.contains('disabled')) return;
@@ -1841,10 +1874,10 @@
         });
 
         function fillModalSizes(colorName) {
-            modalSize.innerHTML = '';
+            modalSize.innerHTML = ''; const allowed = new Set(allowedSizesFor(productName, Array.from(sizes).map(s => s.dataset.size)));
             sizes.forEach(size => {
                 const sz = size.dataset.size;
-                const qty = stockForSize(productName, colorName, sz);
+                if (!allowed.has(String(sz))) return; const qty = stockForSize(productName, colorName, sz);
                 if (typeof qty === 'number' && qty > 0) {
                     const st = statusFromQty(qty);
                     const option = document.createElement('option');
@@ -1868,12 +1901,7 @@
         modal.style.display = 'flex';
         modal.classList.add('animate__animated', 'animate__fadeIn');
 
-        modalColor.onchange = () => {
-            fillModalSizes(modalColor.value);
-            const base = parseCardBasePrice(card);
-            const title = (card.querySelector('.product-title')?.textContent || '').trim();\n            const price = computePriceForSizeWithProduct(base, modalSize.value, title);
-            setCardDisplayedPrice(card, price);
-        };
+        modalColor.onchange = () => { fillModalSizes(modalColor.value);};
         modalSize.onchange = () => {
             const base = parseCardBasePrice(card);
             const title = (card.querySelector('.product-title')?.textContent || '').trim();\n            const price = computePriceForSizeWithProduct(base, modalSize.value, title);
@@ -2029,7 +2057,21 @@
     }
 
     
-    function markSpecialSizes() {
+    
+    function enforceAllowedSizesOnCard(card) {
+        const title = (card.querySelector('.product-title')?.textContent || '').trim();
+        const defaultSizes = Array.from(card.querySelectorAll('.size-option')).map(el => el.dataset.size);
+        const allowed = new Set(allowedSizesFor(title, defaultSizes));
+        card.querySelectorAll('.size-option').forEach(el => {
+            if (!allowed.has(String(el.dataset.size))) {
+                el.classList.add('unavailable');
+                el.style.display = 'none';
+                if (el.classList.contains('selected')) el.classList.remove('selected');
+            } else {
+                el.style.display = '';
+            }
+        });
+    }function markSpecialSizes() {
         document.querySelectorAll('.size-option').forEach(el => {
             if (SIZE_PRICE_RULE.special_sizes.includes(String(el.dataset.size))) {
                 el.classList.add('special');
@@ -2077,8 +2119,7 @@
                 console.warn('Reserva fallida:', err.error || resp.statusText);
             } else {
                 await loadBackendStock();
-                document.querySelectorAll('.product-card').forEach(card => {
-                    setupCardStock(card);
+                document.querySelectorAll('.product-card').forEach(card => { enforceAllowedSizesOnCard(card); setupCardStock(card); const title = (card.querySelector('.product-title')?.textContent || '').trim(); const allowed = new Set(allowedSizesFor(title, Array.from(card.querySelectorAll('.size-option')).map(s=>s.dataset.size))); card.querySelectorAll('.size-option').forEach(s=>{ if(s.classList.contains('selected') && !allowed.has(String(s.dataset.size))) s.classList.remove('selected'); });
                     const selectedColor = card.querySelector('.color-option.selected');
                     if (selectedColor) {
                         const title = (card.querySelector('.product-title')?.textContent || '').trim();
@@ -2165,7 +2206,118 @@
     document.querySelectorAll('.size-option').forEach(size => {
         size.addEventListener('click', () => selectSize(size));
     });
+
+    // Inicialización dinámica desde JSON y backend
+    document.addEventListener('DOMContentLoaded', async () => {
+        try {
+            const catalogGrid = document.getElementById('catalogo-grid');
+            const gridM = document.querySelector('#mujer .products-grid');
+            const gridH = document.querySelector('#hombre .products-grid');
+            const gridN = document.querySelector('#ninos .products-grid');
+            if (catalogGrid) catalogGrid.innerHTML = '';
+            if (gridM) gridM.innerHTML = '';
+            if (gridH) gridH.innerHTML = '';
+            if (gridN) gridN.innerHTML = '';
+            await loadProductsJSON();
+            await loadBackendStock();
+            renderFromProducts();
+            initializeQuantityControls();
+            markSpecialSizes();
+            updateCart();
+        } catch (e) {
+            console.warn('Init error', e);
+        }
+    });
+
+    // Soporte: cargar productos JSON y renderizar
+    let PRODUCTS = [];
+    async function loadProductsJSON() {
+        try {
+            const res = await fetch('data/products.json', { cache: 'no-store' });
+            if (!res.ok) return;
+            PRODUCTS = await res.json();
+            // Construye PRICE_TABLE y ALLOWED_SIZES_TABLE desde JSON
+            PRODUCTS.forEach(p => {
+                if (typeof p.price_common === 'number') {
+                    const key = normalizeName(p.name);
+                    window.PRICE_TABLE = window.PRICE_TABLE || {};
+                    window.PRICE_TABLE[key] = { common: p.price_common, special: (p.price_special ?? p.price_common) };
+                }
+                if (Array.isArray(p.allowed_sizes) && p.allowed_sizes.length) {
+                    const key = normalizeName(p.name);
+                    window.ALLOWED_SIZES_TABLE = window.ALLOWED_SIZES_TABLE || {};
+                    window.ALLOWED_SIZES_TABLE[key] = p.allowed_sizes.map(String);
+                }
+            });
+        } catch (e) {
+            console.warn('No se pudo cargar data/products.json', e);
+        }
+    }
+
+    function sectionGrid(id) {
+        if (id === 'catalogo') return document.getElementById('catalogo-grid');
+        const sec = document.getElementById(id);
+        return sec ? sec.querySelector('.products-grid') : null;
+    }
+
+    function buildCardFromProduct(p) {
+        const colors = Array.isArray(p.colors) && p.colors.length ? p.colors : colorsForType(p.type);
+        const sizes = Array.isArray(p.allowed_sizes) && p.allowed_sizes.length ? p.allowed_sizes : sizesForType(p.type);
+        registerDefaultStock(p.name, colors, sizes);
+        const card = document.createElement('div');
+        card.className = 'product-card';
+        card.dataset.type = p.type || '';
+        const img = (p.images && p.images[0]) || `https://placehold.co/300x300?text=${encodeURIComponent(p.name)}`;
+        const pc = typeof p.price_common === 'number' ? p.price_common : 0;
+        const ps = typeof p.price_special === 'number' ? p.price_special : null;
+        card.dataset.basePrice = String(pc);
+        card.innerHTML = `
+            <div class="product-image">
+                <img src="${img}" alt="${p.name}">
+            </div>
+            <div class="product-info">
+                <h3 class="product-title">${p.name}</h3>
+                <div class="product-price">${formatCurrency(pc)}${ps ? ` <small>${formatCurrency(ps)}</small>` : ''}</div>
+                <div class="product-colors">
+                    ${colors.map(c => `<div class="color-option" title="${c}" data-color="${c}" style="background-color: ${c==='Negro'?'#000':c==='Gris'?'#777':c==='Azul'?'#06f':c==='Rojo'?'#f33':'#ccc'};"></div>`).join('')}
+                </div>
+                <div class="product-sizes">
+                    <div class="size-title">Talles disponibles:</div>
+                    <div class="size-options">
+                        ${sizes.map(s => `<span class="size-option available" data-size="${s}">${s}</span>`).join('')}
+                    </div>
+                </div>
+                <div class="product-actions">
+                    <button class="btn btn-primary" onclick="openModal('${p.name.replace(/'/g, "\'")}', '${p.type}', this)">Comprar</button>
+                    <button class="btn btn-outline"><i class="far fa-heart"></i></button>
+                </div>
+            </div>`;
+        return card;
+    }
+
+    function renderFromProducts() {
+        const sections = ['catalogo','mujer','hombre','ninos'];
+        sections.forEach(sec => {
+            const grid = sectionGrid(sec);
+            if (!grid) return;
+            grid.innerHTML = '';
+            PRODUCTS.filter(p => (p.section || 'catalogo') === sec || sec === 'catalogo')
+                .forEach(p => grid.appendChild(buildCardFromProduct(p)));
+        });
+        document.querySelectorAll('.color-option').forEach(c => c.addEventListener('click', () => selectColor(c)));
+        document.querySelectorAll('.size-option').forEach(s => s.addEventListener('click', () => selectSize(s)));
+        document.querySelectorAll('.product-card').forEach(card => {
+            enforceAllowedSizesOnCard(card);
+            setupCardStock(card);
+        });
+    }
 </script>
+
+
+
+
+
+
 
 
 
