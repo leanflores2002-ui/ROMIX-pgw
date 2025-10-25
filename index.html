@@ -1782,6 +1782,33 @@
         delta: 1500,
         multiplier: 1.0
     };
+    // Normaliza nombres y tabla de precios por prenda (1–5 vs 6–8)
+    function normalizeName(s) {
+        return (s || '').toLowerCase()
+            .normalize('NFD').replace(/\p{Diacritic}/gu, '')
+            .replace(/\s+/g, ' ').trim();
+    }
+    const PRICE_TABLE = {
+        [normalizeName('Calza lycra chupin')]: { common: 9500, special: 10000 },
+        [normalizeName('Pantalón jogger lycra dama')]: { common: 12900, special: 13400 },
+        [normalizeName('Babucha modal con puño')]: { common: 7000, special: 7500 },
+        [normalizeName('Bermuda rústico hombre')]: { common: 9300, special: 9900 },
+        [normalizeName('Remera lycra dry deportivo hombre')]: { common: 9400, special: 9900 }
+    };
+    function computePriceForSizeWithProduct(base, size, productName) {
+        const norm = normalizeName(productName);
+        const byProduct = PRICE_TABLE[norm];
+        if (byProduct) {
+            const isSpecial = SIZE_PRICE_RULE.special_sizes.includes(String(size));
+            const p = isSpecial ? byProduct.special : byProduct.common;
+            if (typeof p === 'number' && !isNaN(p) && p > 0) return p;
+        }
+        // Fallback a la regla global
+        const isSpecial = SIZE_PRICE_RULE.special_sizes.includes(String(size));
+        if (!isSpecial) return base;
+        if (SIZE_PRICE_RULE.mode === 'multiplier') return Math.max(0, base * (SIZE_PRICE_RULE.multiplier || 1.0));
+        return Math.max(0, base + (SIZE_PRICE_RULE.delta || 0));
+    }
 
     function openModal(productName, productType, button) {
         const card = button.closest('.product-card');
@@ -1844,12 +1871,12 @@
         modalColor.onchange = () => {
             fillModalSizes(modalColor.value);
             const base = parseCardBasePrice(card);
-            const price = computePriceForSize(base, modalSize.value);
+            const title = (card.querySelector('.product-title')?.textContent || '').trim();\n            const price = computePriceForSizeWithProduct(base, modalSize.value, title);
             setCardDisplayedPrice(card, price);
         };
         modalSize.onchange = () => {
             const base = parseCardBasePrice(card);
-            const price = computePriceForSize(base, modalSize.value);
+            const title = (card.querySelector('.product-title')?.textContent || '').trim();\n            const price = computePriceForSizeWithProduct(base, modalSize.value, title);
             setCardDisplayedPrice(card, price);
         };
     }
@@ -1871,7 +1898,7 @@
         );
         // Calcular precio según talle seleccionado
         const base = parseCardBasePrice(card);
-        const price = computePriceForSize(base, size);
+        const price = computePriceForSizeWithProduct(base, size, currentProduct);
 
         if (!color || !size || !quantity || quantity < 1) {
             alert('Por favor, selecciona color, talle y una cantidad vÃ¡lida.');
@@ -1919,7 +1946,7 @@
             const row = document.createElement('tr');
             const card = getProductCardByName(item.name);
             const base = parseCardBasePrice(card);
-            const computedPrice = computePriceForSize(base, item.size);
+            const computedPrice = computePriceForSizeWithProduct(base, item.size, item.name);
             item.price = computedPrice;
             item.subtotal = item.price * item.quantity;
             row.innerHTML = `
@@ -1978,7 +2005,7 @@
                 }
             }
             fillCartSizes();
-            sizeSelect.addEventListener('change', () => { item.size = sizeSelect.value; const b = parseCardBasePrice(card); item.price = computePriceForSize(b, item.size); item.subtotal = item.price * item.quantity; localStorage.setItem('cart', JSON.stringify(cart)); updateCart(); });
+            sizeSelect.addEventListener('change', () => { item.size = sizeSelect.value; const b = parseCardBasePrice(card); item.price = computePriceForSizeWithProduct(b, item.size, item.name); item.subtotal = item.price * item.quantity; localStorage.setItem('cart', JSON.stringify(cart)); updateCart(); });
             const qtyInput = row.querySelector('.cart-qty');
             qtyInput.addEventListener('input', () => {
                 const q = Math.max(1, parseInt(qtyInput.value || '1'));
@@ -2139,6 +2166,11 @@
         size.addEventListener('click', () => selectSize(size));
     });
 </script>
+
+
+
+
+
 
 
 
