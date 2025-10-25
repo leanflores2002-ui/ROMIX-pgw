@@ -329,6 +329,10 @@
         .size-option.selected {
             border: 2px solid var(--primary);
         }
+        .size-option.special {
+            box-shadow: 0 0 0 2px var(--warning) inset;
+            position: relative;
+        }
         
         .product-actions {
             display: flex;
@@ -1770,258 +1774,14 @@
 
     // Precio por talle: regla configurable
     // Config por defecto: sin recargo; podrás ajustar luego.
+    // Precio por talle: regla configurable
+    // Provisorio: + para talles 6-7-8
     const SIZE_PRICE_RULE = (window.SIZE_PRICE_RULE || JSON.parse(localStorage.getItem('SIZE_PRICE_RULE') || 'null')) || {
         special_sizes: ['6','7','8'],
-        mode: 'delta', // 'delta' o 'multiplier'
-        delta: 0,      // incremento fijo para talles especiales
-        multiplier: 1.0// multiplicador para talles especiales
+        mode: 'delta',
+        delta: 1500,
+        multiplier: 1.0
     };
-
-    function computePriceForSize(base, size) {
-        if (!size) return base;
-        const isSpecial = SIZE_PRICE_RULE.special_sizes.includes(String(size));
-        if (!isSpecial) return base;
-        if (SIZE_PRICE_RULE.mode === 'multiplier') {
-            return Math.max(0, base * (SIZE_PRICE_RULE.multiplier || 1.0));
-        }
-        return Math.max(0, base + (SIZE_PRICE_RULE.delta || 0));
-    }
-
-    function parseCardBasePrice(card) {
-        if (!card) return 0;
-        if (card.dataset.basePrice) return parseFloat(card.dataset.basePrice);
-        const el = card.querySelector('.product-price');
-        if (!el) return 0;
-        // Primer nodo de texto antes de <small>
-        const raw = (el.childNodes[0]?.nodeValue || '').trim();
-        const num = raw.replace(/[^0-9.,]/g, '').replace(/\./g, '').replace(',', '.');
-        const val = parseFloat(num || '0');
-        if (!isNaN(val)) card.dataset.basePrice = String(val);
-        return isNaN(val) ? 0 : val;
-    }
-
-    function formatCurrency(n) {
-        try { return n.toLocaleString('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }); } catch (_) {}
-        return '$' + Math.round(n).toString();
-    }
-
-    function setCardDisplayedPrice(card, amount) {
-        const el = card.querySelector('.product-price');
-        if (!el) return;
-        const small = el.querySelector('small');
-        el.innerHTML = `${formatCurrency(amount)}${small ? ' <small>' + small.textContent + '</small>' : ''}`;
-    }
-
-    function refreshCardPriceForSelectedSize(card) {
-        const sizeEl = card.querySelector('.size-option.selected');
-        const base = parseCardBasePrice(card);
-        const price = computePriceForSize(base, sizeEl?.dataset.size);
-        setCardDisplayedPrice(card, price);
-    }
-
-    function productTotalAvailable(productName) {
-        const product = stockData[productName];
-        if (!product || !product.colors) return 0;
-        let total = 0;
-        for (const c of Object.keys(product.colors)) {
-            const col = product.colors[c];
-            if (typeof col.stock === 'number') total += col.stock;
-            if (col.sizes) total += Object.values(col.sizes).reduce((a, b) => a + (typeof b === 'number' ? b : 0), 0);
-        }
-        return total;
-    }
-
-    async function refreshAllStockUI() {
-        await loadBackendStock();
-        document.querySelectorAll('.product-card').forEach(card => {
-            const title = (card.querySelector('.product-title')?.textContent || '').trim();
-            // Ocultar carta si no queda disponibilidad total
-            const total = productTotalAvailable(title);
-            if (typeof total === 'number' && total <= 0) {
-                card.style.display = 'none';
-                return;
-            } else {
-                card.style.display = 'block';
-            }
-            setupCardStock(card);
-            const selectedColor = card.querySelector('.color-option.selected');
-            if (selectedColor) {
-                updateSizesForColor(card, title, selectedColor.dataset.color);
-            }
-        });
-        // Cart puede necesitar revalidación de talles/colores
-        updateCart();
-    }
-
-    function renderStockIndicator(card, productName, colorName) {
-        let indicator = card.querySelector('.stock-indicator');
-        if (!indicator) {
-            indicator = document.createElement('div');
-            indicator.className = 'stock-indicator';
-            const colorsRow = card.querySelector('.product-colors');
-            colorsRow?.after(indicator);
-        }
-        const qty = stockFor(productName, colorName);
-        const st = statusFromQty(qty);
-        indicator.innerHTML = `<span class="light ${st.cls}"></span><span>${colorName ? colorName + ' â€” ' : ''}${st.label}</span>`;
-    }
-
-    function setupCardStock(card) {
-        const title = (card.querySelector('.product-title')?.textContent || '').trim();
-        const colors = card.querySelectorAll('.color-option');
-        colors.forEach(c => {
-            const cname = c.dataset.color;
-            const qty = stockFor(title, cname);
-            if (qty === 0) {
-                c.classList.add('disabled');
-                c.title = `${cname} â€” Agotado`;
-            } else if (qty !== undefined && qty <= LOW_STOCK_THRESHOLD) {
-                c.title = `${cname} â€” Pocas unidades`;
-            } else if (qty !== undefined) {
-                c.title = `${cname} â€” Disponible`;
-            }
-        });
-        if (!card.querySelector('.helper-hint')) {
-            const hint = document.createElement('div');
-            hint.className = 'helper-hint';
-            hint.textContent = 'ElegÃ­ un color para ver los talles disponibles.';
-            const colorsRow = card.querySelector('.product-colors');
-            colorsRow?.after(hint);
-        }
-    }
-
-    function updateSizesForColor(card, productName, colorName) {
-        const sizes = card.querySelectorAll('.size-option');
-        sizes.forEach(s => {
-            s.classList.remove('available', 'low-stock', 'unavailable');
-            const sizeName = s.dataset.size;
-            const qty = stockForSize(productName, colorName, sizeName);
-            if (qty === 0) {
-                s.classList.add('unavailable');
-                if (s.classList.contains('selected')) s.classList.remove('selected');
-                s.title = `${sizeName} â€” Agotado`;
-            } else if (typeof qty === 'number') {
-                if (qty <= LOW_STOCK_THRESHOLD) {
-                    s.classList.add('low-stock');
-                    s.title = `${sizeName} â€” Pocas unidades`;
-                } else {
-                    s.classList.add('available');
-                    s.title = `${sizeName} â€” Disponible`;
-                }
-            }
-        });
-    }
-
-    function setupCarousel(card, images) {
-        const imgEl = card.querySelector('.product-image img');
-        if (!imgEl || !images || images.length === 0) return;
-        carouselState.set(card, { images, index: 0, imgEl });
-        imgEl.src = images[0];
-
-        let nav = card.querySelector('.carousel-nav');
-        if (!nav) {
-            nav = document.createElement('div');
-            nav.className = 'carousel-nav';
-            nav.innerHTML = `
-                <button class="carousel-btn prev" aria-label="Anterior"><i class="fas fa-chevron-left"></i></button>
-                <button class="carousel-btn next" aria-label="Siguiente"><i class="fas fa-chevron-right"></i></button>
-            `;
-            card.querySelector('.product-image')?.appendChild(nav);
-            nav.querySelector('.prev').addEventListener('click', () => shiftCarousel(card, -1));
-            nav.querySelector('.next').addEventListener('click', () => shiftCarousel(card, 1));
-        }
-
-        renderDots(card);
-    }
-
-    function renderDots(card) {
-        const state = carouselState.get(card);
-        if (!state) return;
-        let dots = card.querySelector('.carousel-dots');
-        if (!dots) {
-            dots = document.createElement('div');
-            dots.className = 'carousel-dots';
-            card.querySelector('.product-image')?.appendChild(dots);
-        }
-        dots.innerHTML = '';
-        state.images.forEach((_, i) => {
-            const d = document.createElement('div');
-            d.className = 'carousel-dot' + (i === state.index ? ' active' : '');
-            d.addEventListener('click', () => setCarouselIndex(card, i));
-            dots.appendChild(d);
-        });
-    }
-
-    function setCarouselIndex(card, i) {
-        const state = carouselState.get(card);
-        if (!state) return;
-        state.index = (i + state.images.length) % state.images.length;
-        state.imgEl.src = state.images[state.index];
-        renderDots(card);
-    }
-
-    function shiftCarousel(card, delta) {
-        const state = carouselState.get(card);
-        setCarouselIndex(card, (state?.index || 0) + delta);
-    }
-
-    document.addEventListener('DOMContentLoaded', async () => {
-        // Render dinÃ¡mico del catÃ¡logo y luego configurar stock
-        renderCatalog();
-        await loadBackendStock();
-        // Configurar stock e imÃ¡genes por tarjeta
-        document.querySelectorAll('.product-card').forEach(card => {
-            setupCardStock(card);
-            const selected = card.querySelector('.color-option.selected') || card.querySelector('.color-option:not(.disabled)');
-            if (selected) {
-                const title = (card.querySelector('.product-title')?.textContent || '').trim();
-                renderStockIndicator(card, title, selected.dataset.color);
-                const imgs = stockData[title]?.colors?.[selected.dataset.color]?.images;
-                if (imgs && imgs.length) setupCarousel(card, imgs);
-                updateSizesForColor(card, title, selected.dataset.color);
-            }
-        });\n        // Refresco automático de stock cada 30s\n        setInterval(() => { refreshAllStockUI(); }, 30000);\n
-        initializeQuantityControls();
-        updateCart();
-    });
-
-    function redirectToHelp() {
-        window.location.href = 'ayuda.html';
-    }
-
-    function selectColor(element) {
-        if (element.classList.contains('disabled')) {
-            return;
-        }
-        const card = element.closest('.product-card');
-        card.querySelectorAll('.color-option').forEach(opt => opt.classList.remove('selected'));
-        element.classList.add('selected');
-        const title = (card.querySelector('.product-title')?.textContent || '').trim();
-        const colorName = element.dataset.color;
-        renderStockIndicator(card, title, colorName);
-        const imgs = stockData[title]?.colors?.[colorName]?.images;
-        if (imgs && imgs.length) setupCarousel(card, imgs);
-        updateSizesForColor(card, title, colorName);
-    }
-
-    function selectSize(element) {
-        if (element.classList.contains('unavailable')) return;
-        const card = element.closest('.product-card');
-        card.querySelectorAll('.size-option').forEach(opt => opt.classList.remove('selected'));
-        element.classList.add('selected');
-        // Actualizar precio mostrado según talle
-        refreshCardPriceForSelectedSize(card);
-    }
-
-    function validateSelection(card) {
-        const selectedColor = card.querySelector('.color-option.selected');
-        const selectedSize = card.querySelector('.size-option.selected');
-        if (!selectedColor || !selectedSize) {
-            alert('Por favor, selecciona un color y un talle antes de agregar al carrito.');
-            return false;
-        }
-        return true;
-    }
 
     function openModal(productName, productType, button) {
         const card = button.closest('.product-card');
@@ -2029,6 +1789,7 @@
 
         currentProduct = productName;
         currentType = productType;
+
         const colors = card.querySelectorAll('.color-option');
         const sizes = card.querySelectorAll('.size-option');
         const modal = document.getElementById('buy-modal');
@@ -2042,7 +1803,7 @@
         modalSize.innerHTML = '';
 
         colors.forEach(color => {
-            if (color.classList.contains('disabled')) return; // omitir agotados
+            if (color.classList.contains('disabled')) return;
             const option = document.createElement('option');
             const cname = color.dataset.color;
             const qty = stockFor(productName, cname);
@@ -2052,7 +1813,6 @@
             modalColor.appendChild(option);
         });
 
-        // Cargar talles segÃºn color seleccionado en el modal
         function fillModalSizes(colorName) {
             modalSize.innerHTML = '';
             sizes.forEach(size => {
@@ -2081,10 +1841,8 @@
         modal.style.display = 'flex';
         modal.classList.add('animate__animated', 'animate__fadeIn');
 
-        // Cambiar talles cuando cambia el color en el modal
         modalColor.onchange = () => {
             fillModalSizes(modalColor.value);
-            // sincronizar precio del card por si cambia talle luego del color
             const base = parseCardBasePrice(card);
             const price = computePriceForSize(base, modalSize.value);
             setCardDisplayedPrice(card, price);
@@ -2159,6 +1917,11 @@
         cartItems.innerHTML = '';
         cart.forEach(item => {
             const row = document.createElement('tr');
+            const card = getProductCardByName(item.name);
+            const base = parseCardBasePrice(card);
+            const computedPrice = computePriceForSize(base, item.size);
+            item.price = computedPrice;
+            item.subtotal = item.price * item.quantity;
             row.innerHTML = `
                 <td>${item.name}</td>
                 <td>${item.type}</td>
@@ -2215,11 +1978,7 @@
                 }
             }
             fillCartSizes();
-            sizeSelect.addEventListener('change', () => {
-                item.size = sizeSelect.value;
-                localStorage.setItem('cart', JSON.stringify(cart));
-                updateCart();
-            });
+            sizeSelect.addEventListener('change', () => { item.size = sizeSelect.value; const b = parseCardBasePrice(card); item.price = computePriceForSize(b, item.size); item.subtotal = item.price * item.quantity; localStorage.setItem('cart', JSON.stringify(cart)); updateCart(); });
             const qtyInput = row.querySelector('.cart-qty');
             qtyInput.addEventListener('input', () => {
                 const q = Math.max(1, parseInt(qtyInput.value || '1'));
@@ -2242,7 +2001,17 @@
         }
     }
 
-    function toggleCart() {
+    
+    function markSpecialSizes() {
+        document.querySelectorAll('.size-option').forEach(el => {
+            if (SIZE_PRICE_RULE.special_sizes.includes(String(el.dataset.size))) {
+                el.classList.add('special');
+                if (!el.title || !el.title.includes('Especial')) {
+                    el.title = ${el.dataset.size} – Talle especial;
+                }
+            }
+        });
+    }function toggleCart() {
         const cartSection = document.getElementById('cart');
         cartSection.classList.remove('hidden');
         cartSection.classList.add('animate__animated', 'animate__fadeIn');
@@ -2370,6 +2139,14 @@
         size.addEventListener('click', () => selectSize(size));
     });
 </script>
+
+
+
+
+
+
+
+
 
 
 
