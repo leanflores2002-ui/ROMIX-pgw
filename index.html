@@ -1805,6 +1805,106 @@
         return { cls: 'stock-ok', label: 'Disponible' };
     }
 
+    // Indicador visual de stock por color
+    function renderStockIndicator(card, productName, colorName) {
+        let indicator = card.querySelector('.stock-indicator');
+        if (!indicator) {
+            indicator = document.createElement('div');
+            indicator.className = 'stock-indicator';
+            const colorsRow = card.querySelector('.product-colors');
+            colorsRow && colorsRow.after(indicator);
+        }
+        const qty = stockFor(productName, colorName);
+        const st = statusFromQty(qty);
+        indicator.innerHTML = `<span class="light ${st.cls}"></span><span>${colorName ? colorName + ' – ' : ''}${st.label}</span>`;
+    }
+
+    // Inicializa estado de colores (agotado/pocas unidades) y tip de ayuda
+    function setupCardStock(card) {
+        const title = (card.querySelector('.product-title')?.textContent || '').trim();
+        const colors = card.querySelectorAll('.color-option');
+        colors.forEach(c => {
+            const cname = c.dataset.color;
+            const qty = stockFor(title, cname);
+            c.classList.remove('disabled');
+            if (qty === 0) {
+                c.classList.add('disabled');
+                c.title = `${cname} – Agotado`;
+            } else if (qty !== undefined && qty <= LOW_STOCK_THRESHOLD) {
+                c.title = `${cname} – Pocas unidades`;
+            } else if (qty !== undefined) {
+                c.title = `${cname} – Disponible`;
+            }
+        });
+        if (!card.querySelector('.helper-hint')) {
+            const hint = document.createElement('div');
+            hint.className = 'helper-hint';
+            hint.textContent = 'Elegí un color para ver los talles disponibles.';
+            const colorsRow = card.querySelector('.product-colors');
+            colorsRow && colorsRow.after(hint);
+        }
+    }
+
+    // Habilita/inhabilita talles según stock del color elegido
+    function updateSizesForColor(card, productName, colorName) {
+        const sizes = card.querySelectorAll('.size-option');
+        sizes.forEach(s => {
+            s.classList.remove('available', 'low-stock', 'unavailable');
+            const sizeName = s.dataset.size;
+            const qty = stockForSize(productName, colorName, sizeName);
+            if (qty === 0) {
+                s.classList.add('unavailable');
+                if (s.classList.contains('selected')) s.classList.remove('selected');
+                s.title = `${sizeName} – Agotado`;
+            } else if (typeof qty === 'number') {
+                if (qty <= LOW_STOCK_THRESHOLD) {
+                    s.classList.add('low-stock');
+                    s.title = `${sizeName} – Pocas unidades`;
+                } else {
+                    s.classList.add('available');
+                    s.title = `${sizeName} – Disponible`;
+                }
+            }
+        });
+    }
+
+    function selectColor(element) {
+        if (element.classList.contains('disabled')) return;
+        const card = element.closest('.product-card');
+        card.querySelectorAll('.color-option').forEach(opt => opt.classList.remove('selected'));
+        element.classList.add('selected');
+        const title = (card.querySelector('.product-title')?.textContent || '').trim();
+        const colorName = element.dataset.color;
+        renderStockIndicator(card, title, colorName);
+        // Si hay imágenes por color, usar la primera como preview
+        const imgEl = card.querySelector('.product-image img');
+        const imgs = stockData[title]?.colors?.[colorName]?.images;
+        if (imgEl && imgs && imgs.length) imgEl.src = imgs[0];
+        updateSizesForColor(card, title, colorName);
+    }
+
+    function selectSize(element) {
+        if (element.classList.contains('unavailable')) return;
+        const card = element.closest('.product-card');
+        card.querySelectorAll('.size-option').forEach(opt => opt.classList.remove('selected'));
+        element.classList.add('selected');
+        // actualizar precio por talle
+        const base = parseCardBasePrice(card);
+        const title = (card.querySelector('.product-title')?.textContent || '').trim();
+        const price = computePriceForSizeWithProduct(base, element.dataset.size, title);
+        setCardDisplayedPrice(card, price);
+    }
+
+    function validateSelection(card) {
+        const selectedColor = card.querySelector('.color-option.selected');
+        const selectedSize = card.querySelector('.size-option.selected');
+        if (!selectedColor || !selectedSize) {
+            alert('Por favor, selecciona un color y un talle antes de continuar.');
+            return false;
+        }
+        return true;
+    }
+
     // Precio por talle: regla configurable
     // Config por defecto: sin recargo; podrás ajustar luego.
     // Precio por talle: regla configurable
