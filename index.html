@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Romix - ColecciÃ³n Invierno 2025</title>
+    <script>
+      window.API_BASE = 'https://romix-pgw-production.up.railway.app';
+    </script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
     <style>
@@ -649,6 +652,10 @@
             }
         }
     </style>
+
+        /* Config floating button */
+        .config-fab { position: fixed; right: 20px; bottom: 20px; width: 48px; height: 48px; border-radius: 50%; background: var(--secondary); color: #fff; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.2); cursor: pointer; font-size: 22px; line-height: 48px; text-align: center; z-index: 3000; }
+        .config-fab:hover { filter: brightness(1.05); }
 </head>
 <body>
     <header>
@@ -1478,6 +1485,19 @@
             <p>&copy; 2025 Romix - Todos los derechos reservados</p>
         </div>
     </footer>
+    <button class="config-fab" onclick="openConfig()" title="Configurar API">⚙️</button>
+    <div id="config-modal" class="modal">
+      <div class="modal-content">
+        <h3>Configuración</h3>
+        <label>API Base (Railway):</label>
+        <input type="text" id="cfg-api-base" placeholder="https://romix-pgw-production.up.railway.app" />
+        <button class="btn btn-success" onclick="saveApiBase()">Guardar y recargar</button>
+        <button class="btn btn-outline" onclick="testApiBase()">Probar conexión</button>
+        <button class="btn btn-danger" onclick="clearApiBase()">Quitar API_BASE</button>
+        <button class="btn btn-outline" onclick="closeConfig()">Cerrar</button>
+      </div>
+    </div>
+
     
    <script>
     let cart = JSON.parse(localStorage.getItem('cart')) || [];
@@ -2429,7 +2449,35 @@
             setupCardStock(card);
         });
     }
-</script>
+    function openConfig(){
+        const el = document.getElementById(''cfg-api-base'');
+        el.value = localStorage.getItem(''API_BASE'') || (window.API_BASE || '''');
+        document.getElementById(''config-modal'').style.display = ''flex'';
+    }
+    function closeConfig(){ document.getElementById(''config-modal'').style.display = ''none''; }
+    function saveApiBase(){
+        const v = (document.getElementById(''cfg-api-base'').value||'''').trim();
+        if(!v){ alert(''Ingresá una URL válida''); return; }
+        localStorage.setItem(''API_BASE'', v);
+        window.API_BASE = v;
+        alert(''API_BASE guardado. Se recargará la página.'');
+        location.reload();
+    }
+    function clearApiBase(){
+        localStorage.removeItem(''API_BASE'');
+        delete window.API_BASE;
+        alert(''API_BASE eliminado. Se recargará la página.'');
+        location.reload();
+    }
+    async function testApiBase(){
+        const v = (document.getElementById(''cfg-api-base'').value||'''').trim().replace(/\/$/,'''');
+        try{
+            const r = await fetch(v+''/health'', { cache: ''no-store'' });
+            alert(r.ok? ''Conexión OK'': ''Error ''+r.status);
+        }catch(e){ alert(''Error: ''+e.message); }
+    }</script>
+
+
 
 
 
