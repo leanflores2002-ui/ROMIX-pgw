@@ -1900,7 +1900,7 @@
         const imgEl = card.querySelector('.product-image img');
         const imgs = stockData[title]?.colors?.[colorName]?.images;
         if (imgEl && imgs && imgs.length) imgEl.src = imgs[0];
-        updateSizesForColor(card, title, colorName);
+        updateSizesForColor(card, title, colorName); updateBuyButtonState(card);
     }
 
     function selectSize(element) {
@@ -1912,7 +1912,7 @@
         const base = parseCardBasePrice(card);
         const title = (card.querySelector('.product-title')?.textContent || '').trim();
         const price = computePriceForSizeWithProduct(base, element.dataset.size, title);
-        setCardDisplayedPrice(card, price);
+        setCardDisplayedPrice(card, price); updateBuyButtonState(card);
     }
 
     function validateSelection(card) {
@@ -2024,8 +2024,9 @@
         modalColor.onchange = () => { fillModalSizes(modalColor.value);};
         modalSize.onchange = () => {
             const base = parseCardBasePrice(card);
-            const title = (card.querySelector('.product-title')?.textContent || '').trim();\n            const price = computePriceForSizeWithProduct(base, modalSize.value, title);
-            setCardDisplayedPrice(card, price);
+            const title = (card.querySelector('.product-title')?.textContent || '').trim();
+            const price = computePriceForSizeWithProduct(base, modalSize.value, title);
+            setCardDisplayedPrice(card, price); updateBuyButtonState(card);
         };
     }
 
@@ -2196,7 +2197,7 @@
             if (SIZE_PRICE_RULE.special_sizes.includes(String(el.dataset.size))) {
                 el.classList.add('special');
                 if (!el.title || !el.title.includes('Especial')) {
-                    el.title = ${el.dataset.size} – Talle especial;
+                    el.title = `${el.dataset.size} – Talle especial`;
                 }
             }
         });
@@ -2252,13 +2253,21 @@
         }
 
 
-        let message = 'Â¡Hola! Quiero realizar el siguiente pedido:\n\n';
+        let message = 'Â¡Hola! Quiero realizar el siguiente pedido:
+
+';
         cart.forEach(item => {
-            message += `${item.name} (${item.type})\n`;
-            message += `Color: ${item.color}\n`;
-            message += `Talle: ${item.size}\n`;
-            message += `Cantidad: ${item.quantity}\n`;
-            message += `Subtotal: $${item.subtotal.toFixed(2)}\n\n`;
+            message += `${item.name} (${item.type})
+`;
+            message += `Color: ${item.color}
+`;
+            message += `Talle: ${item.size}
+`;
+            message += `Cantidad: ${item.quantity}
+`;
+            message += `Subtotal: $${item.subtotal.toFixed(2)}
+
+`;
         });
         message += `Total: $${cart.reduce((total, item) => total + item.subtotal, 0).toFixed(2)}`;
 
@@ -2446,8 +2455,7 @@
         document.querySelectorAll('.size-option').forEach(s => s.addEventListener('click', () => selectSize(s)));
         document.querySelectorAll('.product-card').forEach(card => {
             enforceAllowedSizesOnCard(card);
-            setupCardStock(card);
-        });
+            setupCardStock(card); updateBuyButtonState(card); });
     }
     function openConfig(){
         const el = document.getElementById(''cfg-api-base'');
@@ -2500,4 +2508,20 @@
 
 
 
+
+
+
+
+
+
+
+    function updateBuyButtonState(card){
+        const btn = card.querySelector('.product-actions .btn.btn-primary');
+        if(!btn) return;
+        const hasColor = !!card.querySelector('.color-option.selected');
+        const hasSize = !!card.querySelector('.size-option.selected');
+        btn.disabled = !(hasColor && hasSize);
+        btn.style.opacity = btn.disabled ? 0.6 : 1;
+        btn.style.cursor = btn.disabled ? 'not-allowed' : 'pointer';
+    }
 
